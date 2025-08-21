@@ -27,12 +27,12 @@ Our ears and brain interpret the physical properties of sound waves into two dis
 ### Pitch
 - How "high" or "low" a sound is (e.g., a shrill whistle vs. a deep rumble)
 - Determined by **Frequency**
-- High Frequency = Fast vibrations of the e-drum = High Pitch
+- High Frequency = Fast vibrations of the eardrum = High Pitch
 
 ### Loudness
 - How strong or weak a sound is
 - Determined by **Amplitude** (the wave's maximum displacement)
-- High Amplitude = A stronger pressure wave that moves the e-drum a larger distance = Loud Sound
+- High Amplitude = A stronger pressure wave that moves the eardrum a larger distance = Loud Sound
 
 > **Note**: A sound can be loud and low-pitched (like a foghorn) or quiet and high-pitched (like a whisper). The two properties are independent.
 
@@ -42,12 +42,15 @@ Our ears and brain interpret the physical properties of sound waves into two dis
 - A sound with a pure, clean sine wave, like a tuning fork
 - Contains only one frequency
 - In this simple case, the general term "frequency" and "fundamental frequency" are the same
+- A pure tone can be described by a simple mathematical equation like `y(t) = A sin(2πft)`
 
 ### Complex Sound (Quasi-Periodic)
 - Sounds from real-world sources like musical instruments or the human voice
 - Their waveforms are complex and jagged, but they have a repeating pattern
-- These complex sounds are not made of one frequency but are a combination of many simple sine waves added together
+- It is impractical to write one single, simple equation for such a complex shape
+- Instead of a single equation, these sounds are understood as a combination of many simple sine waves added together
 - The mathematical "recipe" for this combination is called a **Fourier Series**
+- This means we don't look for one equation for the whole sound; we look for the many simple sine waves that build it
 
 ## 4. The Recipe of Sound: Fundamental Frequency and Harmonics
 
@@ -58,6 +61,7 @@ Every complex pitched sound is made of two types of ingredients:
 - Determines the pitch that we perceive
 - When we say a note is "440 Hz," we are referring to its fundamental frequency
 - Because it's the most dominant part of the sound, its repetition rate defines the overall Period (T) of the entire complex wave (T = 1/f₀)
+- This is the "prime" frequency that both our brain and measurement algorithms lock onto
 
 ### The Harmonics (Overtones)
 - A series of higher, quieter frequencies that are perfect integer multiples of the fundamental (2f₀, 3f₀, 4f₀, etc.)
@@ -67,19 +71,25 @@ Every complex pitched sound is made of two types of ingredients:
 
 ## 5. The Pitch-Frequency Graph: Visualizing a Law of Hearing
 
-The pitch-frequency graph is a visual representation of a fundamental law of psychoacoustics.
+The pitch-frequency graph is not a plot of a single sound, but a chart that visualizes a fundamental law of psychoacoustics by plotting multiple, separate notes. It is a "law-based graph" derived from observation.
+
+### How the Graph is Constructed
+Each point on the graph is a separate measurement. A musician plays a note (e.g., A₂), and we measure its fundamental frequency (110 Hz). Then they play a different note (A₃), and we measure its fundamental frequency (220 Hz). The curve is the line that connects all these individual measurements.
 
 ### Y-Axis (Pitch)
 - Represents our subjective, linear perception of how "high" a sound is
 - Organized into musical notes (A, B, C, etc.) and octaves (A₀, A₁, A₂)
 - Each step from one octave to the next (e.g., A₂ to A₃) is perceived as an equally sized musical interval
+- This linear spacing is based on the universal biological perception of the octave
 
 ### X-Axis (Frequency)
-- Represents the objective, physical measurement of the fundamental frequency (f₀) of each note
-- Measured in Hertz
+- Represents the objective, physical measurement of the fundamental frequency (f₀) of each note, measured in Hertz
+- We plot the fundamental frequency because, as the loudest and lowest component, it is the "prime" frequency that our brain uses to identify the pitch of a complex sound
 
 ### The Logarithmic Curve
-- Shows that to achieve the linear, equally spaced steps in pitch that we perceive, we need an exponential increase in frequency
+The graph's curve is the natural result of plotting our linear perception against physical reality. It shows that to achieve the linear, equally spaced steps in pitch that we perceive on the y-axis, we need an exponential increase in frequency on the x-axis.
+
+![Pitch-Frequency Graph](assets/pitchFreqGraphOctave.png)
 
 ## 6. The Rule of the Octave: A Universal Constant
 
@@ -100,10 +110,17 @@ In systems like MIDI, this perceptual relationship is standardized:
 
 The pitch-frequency graph can only be plotted for sound sources that can produce a range of stable, controllable fundamental frequencies.
 
-### Musical Instruments
-Any object or system that allows you to controllably and repeatedly change its physical properties (like string length, air column length, or electronic settings) to produce specific frequency ratios (like doubling for an octave) can be considered a musical instrument.
+### What Makes a Source "Controllable"?
+A musical instrument is any system that allows you to controllably and repeatedly change its physical properties to produce specific frequency ratios. This is achieved by:
+
+- **Changing Length**: Shortening a guitar string with a fret or an air column in a flute with a key
+- **Changing Tension**: Tightening a violin string with a tuning peg or tensing vocal cords
+- **Changing Mass**: Using thicker or thinner strings on a bass vs. a guitar
+- **Electronic Control**: Directly setting an oscillator's frequency in a synthesizer
 
 ### Fixed or Aperiodic Sounds
 This is why the graph does not apply to:
 - A clap (aperiodic noise with no clear pitch)
 - A tap on a glass (a pitched sound with a fixed, unchangeable fundamental frequency)
+
+These sources do not provide the variable range of fundamental frequencies needed to plot the curve.
