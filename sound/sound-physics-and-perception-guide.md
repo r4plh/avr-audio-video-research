@@ -124,3 +124,29 @@ This is why the graph does not apply to:
 - A tap on a glass (a pitched sound with a fixed, unchangeable fundamental frequency)
 
 These sources do not provide the variable range of fundamental frequencies needed to plot the curve.
+
+## 8. Timbre: The "Color" of Sound
+
+Timbre (pronounced TAM-ber) is the specific sound quality, character, or "color" of a note. It's precisely what you hear from the combination of the fundamental frequency and all of its unique harmonics.
+
+Think of a sound as a recipe:
+
+- **Fundamental Frequency** : This is the main ingredient. It tells you what the dish is (e.g., "pasta"). This is the pitch of the note.
+
+- **Harmonics** : These are the spices and other ingredients. Their specific mix and strength are what make the dish unique (e.g., "pasta carbonara" vs. "pasta pesto"). This is the timbre.
+
+The final sound you hear is the complete dish—the combination of the main ingredient and all the spices. Timbre is the reason a violin and a piano playing the exact same note (same fundamental frequency) sound so different from each other. They have the same main ingredient but a different blend of spices, determined by the instrument's physical construction and how it's played.
+
+## 9. The Critical Distinction: Harmonics vs. New Fundamentals
+
+This is a subtle but crucial point for true clarity.
+
+Harmonics are the higher frequencies that exist simultaneously with a single fundamental, giving that one note its unique timbre.
+
+A new note (like the next octave) is a completely new sound event with its own, new fundamental frequency.
+
+When a guitarist plays an A₂ (110 Hz), 110 Hz is the fundamental. The harmonics (220 Hz, 330 Hz, etc.) exist relative to this fundamental. When they change their fingering to play an A₃ (220 Hz), they have created a new sound event where 220 Hz is the new fundamental.
+
+It is less precise to say "the instrument is being played at its 2nd harmonic to get the octave." The more accurate and correct statement is:
+
+"Every time it's played at a new fundamental frequency, which mathematically happens to be double the previous fundamental frequency."
