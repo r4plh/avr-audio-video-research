@@ -1,8 +1,8 @@
-### ## 1. What is Aliasing?
+###  1. What is Aliasing?
 
 **Aliasing** is a distortion effect that occurs when a continuous, analog signal is sampled too slowly to be accurately converted into a digital signal. In audio, this causes high-frequency components of the sound to be incorrectly represented as lower frequencies that did not exist in the original recording. The term "alias" is used because the high frequency takes on a false identity as a lower frequency.
 
-### ## 2. The Core Analogy: The Wagon-Wheel Effect 🎡
+###  2. The Core Analogy: The Wagon-Wheel Effect 🎡
 
 The easiest way to understand aliasing is through the **wagon-wheel effect** seen in movies.
 
@@ -12,7 +12,7 @@ The easiest way to understand aliasing is through the **wagon-wheel effect** see
 * **The Alias**: The camera's sampling rate is too slow to capture the true speed of the wheel, resulting in the creation of a false, backward motion—an alias of the true motion.
 
 
-### ## 3. Aliasing in Sound: A Foundational Principle
+###  3. Aliasing in Sound: A Foundational Principle
 
 This same principle is a fundamental, non-negotiable rule in digital audio.
 
@@ -22,7 +22,7 @@ This same principle is a fundamental, non-negotiable rule in digital audio.
 While the wagon-wheel effect is a rare artifact in video, aliasing is a foundational problem in audio because **high frequencies are essential and common** in all sounds. They provide clarity to speech (like "s" sounds), give instruments their unique timbre, and create the crispness in music (like cymbals). Therefore, preventing aliasing is a basic requirement for any clear audio recording.
 
 
-### ## 4. The Solution: The Nyquist-Shannon Theorem
+###  4. The Solution: The Nyquist-Shannon Theorem
 
 The rule to prevent aliasing is defined by the **Nyquist-Shannon Sampling Theorem**.
 
@@ -31,7 +31,7 @@ The rule to prevent aliasing is defined by the **Nyquist-Shannon Sampling Theore
 * **The "Why"**: A sound wave is a cycle with a positive part (peak) and a negative part (trough). To define this cycle without ambiguity, you need to capture at least two samples per cycle: one to record the "up" motion and one to record the "down" motion.
 
 
-### ## 5. Case Study 1: Undersampling (The 20 kHz / 15 kHz Example)
+###  5. Case Study 1: Undersampling (The 20 kHz / 15 kHz Example)
 
 This example shows what happens when the Nyquist rule is broken.
 
@@ -40,7 +40,7 @@ This example shows what happens when the Nyquist rule is broken.
 * **The Result**: The original 15 kHz tone is lost. Instead, it is incorrectly recorded as a new, false **5 kHz** tone (calculated as $|15,000 \text{ Hz} - 20,000 \text{ Hz}| = 5,000 \text{ Hz}$). This 5 kHz tone is the alias.
 
 
-### ## 6. Case Study 2: Correct Sampling (The >30 kHz Example)
+###  6. Case Study 2: Correct Sampling (The >30 kHz Example)
 
 This example shows how the Nyquist theorem solves the problem.
 
@@ -51,7 +51,7 @@ This example shows how the Nyquist theorem solves the problem.
 
 Real Life Scenerio application
 
-### ## 1. Real-World Sound is Complex 🎹
+###  1. Real-World Sound is Complex 🎹
 
 Real-world audio is never a simple, pure sine wave. According to **Fourier's theorem**, any complex sound can be understood as a combination of many sine waves, each with a different frequency and amplitude.
 
@@ -60,7 +60,7 @@ A sound from an instrument, like a piano, is composed of:
 * **Harmonics (or Overtones)**: These are a series of higher-frequency sine waves that are multiples of the fundamental. The unique combination and loudness of these harmonics create the sound's distinctive **timbre**, which is why a violin sounds different from a flute.
 
 
-### ## 2. The Nyquist Theorem's Focus: The Highest Frequency
+###  2. The Nyquist Theorem's Focus: The Highest Frequency
 
 To accurately record a complex sound, we must capture not just its fundamental pitch but also all the high-frequency harmonics that give it richness and detail.
 
@@ -75,7 +75,7 @@ A standard rate like **44,100 Hz** is used to safely capture the entire audible 
 
 
 
-### ## 3. Oversampling Lower Frequencies for High Fidelity
+###  3. Oversampling Lower Frequencies for High Fidelity
 
 A key consequence of this "highest frequency" rule is that all lower frequencies in the signal are massively **oversampled**, leading to an extremely high-quality digital recording.
 
