@@ -49,7 +49,7 @@ This example shows how the Nyquist theorem solves the problem.
 * **The Result**: The ambiguity is eliminated. There is only one unique 15 kHz wave that can fit the captured sample points. The "shortest path" now correctly represents the original wave, and an accurate digital recording is made.
 
 
-Real Life Scenerio application
+### *Real Life Scenerio application*
 
 ###  1. Real-World Sound is Complex 🎹
 
