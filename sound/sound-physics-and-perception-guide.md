@@ -57,7 +57,7 @@ Our ears and brain interpret the physical properties of sound waves into two dis
 Every complex pitched sound is made of two types of ingredients:
 
 ### The Fundamental Frequency (f₀)
-- The lowest and loudest frequency component in the sound mix
+- The lowest and often the loudest frequency (not compulsory) component in the sound mix
 - Determines the pitch that we perceive
 - When we say a note is "440 Hz," we are referring to its fundamental frequency
 - Because it's the most dominant part of the sound, its repetition rate defines the overall Period (T) of the entire complex wave (T = 1/f₀)
