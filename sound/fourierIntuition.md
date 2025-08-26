@@ -6,7 +6,7 @@ So basically, we have the original audio signal which, for complex sounds (inclu
 
 Now, the Fourier transform is the thing through which we get that graph to be converted from time domain (X-axis -> Time, Y-Axis -> Amplitude) into a frequency domain one (X-axis -> Frequency, Y-Axis -> Magnitude of contribution).
 
-[Time to Frequency Coversion](./assets/timeTOFrequency) 
+![Time to Frequency Coversion](./assets/timeTOFrequency) 
 
 [Graph picture taken from from Valerio Velardo - Demystifying the Fourier Transform: The Intuition](https://www.youtube.com/watch?v=XQ45IgG6rJ4&list=PL-wATfeyAMNqIee7cH3q1bh4QJFAaeNv0&index=10)
 
