@@ -2,7 +2,7 @@
 
 **Aliasing** is a distortion effect that occurs when a continuous, analog signal is sampled too slowly to be accurately converted into a digital signal. In audio, this causes high-frequency components of the sound to be incorrectly represented as lower frequencies that did not exist in the original recording. The term "alias" is used because the high frequency takes on a false identity as a lower frequency.
 
-###  2. The Core Analogy: The Wagon-Wheel Effect 🎡
+###  2. The Core Analogy: The Wagon-Wheel Effect 
 
 The easiest way to understand aliasing is through the **wagon-wheel effect** seen in movies.
 
@@ -82,7 +82,7 @@ A key consequence of this "highest frequency" rule is that all lower frequencies
 If a sampling rate is fast enough to correctly capture the most rapid vibration, it is automatically more than sufficient for all slower vibrations.
 
 **Example using a 44,100 Hz sampling rate**:
-* For the **highest frequency (e.g., 20,000 Hz)**, we sample at ~2.2 times its frequency, safely meeting the Nyquist minimum. ✅
+* For the **highest frequency (e.g., 20,000 Hz)**, we sample at ~2.2 times its frequency, safely meeting the Nyquist minimum. 
 * For a **lower, fundamental frequency (e.g., 500 Hz)**, we sample at ~88 times its frequency.
 
 This significant oversampling of the fundamental and midrange frequencies ensures they are captured with exceptional precision, resulting in a robust and artifact-free digital audio signal.
