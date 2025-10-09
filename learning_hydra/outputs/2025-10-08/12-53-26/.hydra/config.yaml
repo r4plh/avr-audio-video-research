@@ -1,0 +1,5 @@
+db:
+  driver: mysql
+  user: omry
+  password: secret
+  timeout: 5
