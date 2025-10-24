@@ -7,8 +7,6 @@ from torchvision.datasets import MNIST
 from torch.utils.data import DataLoader
 import lightning as L
 
-
-
 class Encoder(nn.Module):
     def __init__(self):
         super().__init__()
@@ -49,7 +47,7 @@ dataset = MNIST(os.getcwd(), download=True, transform=transforms.ToTensor())
 train_loader = DataLoader(dataset)
 
 autoencoder = LitAutoEncoder(Encoder(), Decoder())
-trainer = L.Trainer(devices=1, accelerator="gpu")
+trainer = L.Trainer(devices=8, accelerator="gpu")
 trainer.fit(model=autoencoder, train_dataloaders=train_loader)
 
 
