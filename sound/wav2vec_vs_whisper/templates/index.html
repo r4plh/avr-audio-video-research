@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Model Embedding Visualizer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.plot.ly/plotly-2.26.0.min.js" charset="utf-8"></script>
+</head>
+<body>
+    <div class="container-fluid">
+        <header class="py-4">
+            <h1 class="text-center">
+                <i class="fas fa-wave-square"></i>
+                Audio Model Embedding Visualizer
+            </h1>
+            <p class="text-center text-muted">
+                Compare Wav2Vec2 and Whisper model embeddings across different layers
+            </p>
+        </header>
+
+        <div class="row">
+            <!-- Left Panel - Controls -->
+            <div class="col-md-3 controls-panel">
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5><i class="fas fa-cog"></i> Configuration</h5>
+                    </div>
+                    <div class="card-body">
+
+                        <!-- Step 1: Model Selection -->
+                        <div class="config-section">
+                            <h6 class="section-title">
+                                <span class="badge bg-primary">1</span> Select Models
+                            </h6>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Wav2Vec2 Models:</label>
+                                <div class="model-checkboxes" id="wav2vec-models">
+                                    {% for model in wav2vec_models %}
+                                    <div class="form-check">
+                                        <input class="form-check-input model-checkbox wav2vec-model"
+                                               type="checkbox"
+                                               value="{{ model.name }}"
+                                               id="wav2vec-{{ loop.index }}">
+                                        <label class="form-check-label small" for="wav2vec-{{ loop.index }}">
+                                            {{ model.name.split('/')[-1] }} <span class="text-muted">[{{ model.params }}]</span>
+                                        </label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Whisper Models:</label>
+                                <div class="model-checkboxes" id="whisper-models">
+                                    {% for model in whisper_models %}
+                                    <div class="form-check">
+                                        <input class="form-check-input model-checkbox whisper-model"
+                                               type="checkbox"
+                                               value="{{ model.name }}"
+                                               id="whisper-{{ loop.index }}">
+                                        <label class="form-check-label small" for="whisper-{{ loop.index }}">
+                                            {{ model.name.split('/')[-1] }} <span class="text-muted">[{{ model.params }}]</span>
+                                        </label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <button class="btn btn-sm btn-primary w-100" id="load-model-info">
+                                <i class="fas fa-info-circle"></i> Load Model Info
+                            </button>
+                        </div>
+
+                        <hr>
+
+                        <!-- Step 2: Layer Selection (dynamically populated) -->
+                        <div class="config-section">
+                            <h6 class="section-title">
+                                <span class="badge bg-primary">2</span> Select Layers
+                            </h6>
+                            <div id="layer-selection-container">
+                                <p class="text-muted small">Load model info first</p>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Step 3: Word Selection -->
+                        <div class="config-section">
+                            <h6 class="section-title">
+                                <span class="badge bg-primary">3</span> Select Words
+                            </h6>
+
+                            <div class="mb-2">
+                                <button class="btn btn-sm btn-outline-secondary" id="select-all-words">
+                                    Select All
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" id="deselect-all-words">
+                                    Clear
+                                </button>
+                            </div>
+
+                            <div class="word-checkboxes" id="word-selection">
+                                {% for word in speech_words %}
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input word-checkbox"
+                                           type="checkbox"
+                                           value="{{ word }}"
+                                           id="word-{{ loop.index }}">
+                                    <label class="form-check-label small" for="word-{{ loop.index }}">
+                                        {{ word }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="mb-2 mt-2">
+                                <label class="form-label small">Samples per word:</label>
+                                <input type="number"
+                                       class="form-control form-control-sm"
+                                       id="samples-per-word"
+                                       value="50"
+                                       min="1"
+                                       max="1000">
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Step 4: Visualization Settings -->
+                        <div class="config-section">
+                            <h6 class="section-title">
+                                <span class="badge bg-primary">4</span> Visualization
+                            </h6>
+
+                            <div class="mb-2">
+                                <label class="form-label small">Reduction Method:</label>
+                                <select class="form-select form-select-sm" id="viz-type">
+                                    <option value="pca">PCA</option>
+                                    <option value="tsne">t-SNE</option>
+                                    <option value="both" selected>Both</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-2">
+                                <label class="form-label small">Dimensions:</label>
+                                <select class="form-select form-select-sm" id="dimensions">
+                                    <option value="both">Both (2D + 3D)</option>
+                                    <option value="3d" selected>3D Only</option>
+                                    <option value="2d">2D Only</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-2">
+                                <label class="form-label small">Pooling Method:</label>
+                                <select class="form-select form-select-sm" id="pooling-method">
+                                    <option value="mean" selected>Mean</option>
+                                    <option value="max">Max</option>
+                                    <option value="position">Position</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-2" id="pooling-position-container" style="display: none;">
+                                <label class="form-label small">Position Index:</label>
+                                <input type="number"
+                                       class="form-control form-control-sm"
+                                       id="pooling-position"
+                                       value="10"
+                                       min="0">
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Action Buttons -->
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-success btn-lg" id="extract-embeddings">
+                                <i class="fas fa-play"></i> Extract Embeddings
+                            </button>
+                            <button class="btn btn-info" id="visualize-btn" disabled>
+                                <i class="fas fa-chart-line"></i> Generate Plots
+                            </button>
+                            <button class="btn btn-warning" id="clear-cache">
+                                <i class="fas fa-trash"></i> Clear Cache
+                            </button>
+                        </div>
+
+                        <!-- Status -->
+                        <div class="mt-3">
+                            <div id="status-container">
+                                <div class="alert alert-info small" role="alert" id="status-message">
+                                    Ready to start
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Visible Progress Bar Section -->
+                <div class="card mt-3" id="progress-container" style="display: none;">
+                    <div class="card-body">
+                        <h6 class="card-title mb-3">
+                            <i class="fas fa-spinner fa-spin me-2"></i>
+                            <span id="progress-title">Processing...</span>
+                        </h6>
+                        <div class="progress" style="height: 25px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-info"
+                                 role="progressbar"
+                                 style="width: 0%"
+                                 id="progress-bar">
+                                <span id="progress-text">Starting...</span>
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <small class="text-muted" id="progress-detail">Initializing...</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel - Visualizations -->
+            <div class="col-md-9">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-chart-scatter"></i> Visualizations</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="plots-container">
+                            <div class="text-center text-muted py-5">
+                                <i class="fas fa-chart-area fa-4x mb-3"></i>
+                                <p>Configure settings and click "Extract Embeddings" to begin</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

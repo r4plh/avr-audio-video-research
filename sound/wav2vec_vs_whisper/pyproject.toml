@@ -5,14 +5,23 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
+    "descript-audiotools>=0.7.2",
+    "einops>=0.8.1",
     "hydra-core>=1.3.2",
     "ipykernel>=6.31.0",
+    "librosa>=0.11.0",
     "lightning>=2.5.5",
+    "matplotlib>=3.9.4",
     "notebook>=7.4.7",
     "omegaconf>=2.3.0",
     "opencv-python>=4.12.0.88",
+    "plotly>=6.4.0",
     "torchvision>=0.23.0",
     "transformers>=4.57.1",
+    "flask>=3.0.0",
+    "scikit-learn>=1.3.0",
+    "tqdm>=4.66.0",
+    "joblib>=1.3.0",
 ]
 
 [tool.uv.workspace]

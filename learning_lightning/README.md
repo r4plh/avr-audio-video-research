@@ -35,4 +35,9 @@ getitem - The most important, it loads one pair of data point, label. The logic 
 The dataloader needs a Dataset object in the argument which points towards a data directory from which the mini batches of data points, labels get created by the logic written inside the getitem of the Dataset Object and data directory which init provides. For creating dataloader for an epoch the getitem of the Dataset gets called multiple times (batch size times, this call can be made parallel) for creating one batch of that data and that's how dataloaders are created each of batch size, inside each batch size there are batch size number of data points, labels are there in one batch and total batches are length/batch size which are further used in training.
 
 
+## More Learnings
+
+In the Lightning module which we define , it have a init and the argument for init (which are also the argument we need to pass when we instanciate the lightning module class) are all considered hyperparameters, there are some things which we should know around these hyperparameters, in ML/DL we know what hyperparameters are, but specifically here all the argument that init accepts of lightning module class are considered to be hyperparameters, now when we do save_hyperparameters all the hyperparameters in saving checkpoint gets saved, if we want to disable or ignore some specific hyperparameters that can also be done using ignore. We can control the hyperparameters through CLI by using argument parser by using keyword used inside init of the lightning module which are infacrt what are termed as hyperparamters.
+
+
  
