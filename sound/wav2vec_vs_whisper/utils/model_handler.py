@@ -1,7 +1,8 @@
 import torch
 from transformers import (
     Wav2Vec2Model, Wav2Vec2Processor,
-    WhisperModel, WhisperProcessor
+    WhisperModel, WhisperProcessor,
+    WhisperForConditionalGeneration
 )
 from typing import Dict, Any
 
@@ -12,6 +13,7 @@ class ModelHandler:
     def __init__(self):
         self.loaded_models = {}
         self.loaded_processors = {}
+        self.loaded_generation_models = {}  # For WhisperForConditionalGeneration
 
     def load_model(self, model_name: str):
         """Load model and processor, cache them"""
@@ -44,6 +46,32 @@ class ModelHandler:
         # Cache
         self.loaded_models[model_name] = model
         self.loaded_processors[model_name] = processor
+
+        return model, processor
+
+    def load_generation_model(self, model_name: str):
+        """Load Whisper generation model for decoder inference"""
+        if model_name in self.loaded_generation_models:
+            return self.loaded_generation_models[model_name], self.loaded_processors[model_name]
+
+        print(f"Loading generation model: {model_name}")
+
+        if 'whisper' not in model_name.lower():
+            raise ValueError(f"Generation model only supported for Whisper, got: {model_name}")
+
+        # Load processor if not already loaded
+        if model_name not in self.loaded_processors:
+            processor = WhisperProcessor.from_pretrained(model_name)
+            self.loaded_processors[model_name] = processor
+        else:
+            processor = self.loaded_processors[model_name]
+
+        # Load generation model
+        model = WhisperForConditionalGeneration.from_pretrained(model_name)
+        model.eval()
+
+        # Cache
+        self.loaded_generation_models[model_name] = model
 
         return model, processor
 

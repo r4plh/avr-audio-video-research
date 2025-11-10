@@ -86,7 +86,13 @@ class EmbeddingExtractor:
                                    pooling_method: str, pooling_position: int,
                                    text_label: str = None) -> Dict[str, np.ndarray]:
         """Extract embeddings from Whisper model"""
+        # Load base model for encoder/CNN
         model, processor = self.model_handler.load_model(model_name)
+
+        # Load generation model if decoder layers are requested
+        gen_model = None
+        if 'decoder' in layer_config and layer_config['decoder']:
+            gen_model, _ = self.model_handler.load_generation_model(model_name)
 
         # Load audio
         audio, sr = librosa.load(audio_path, sr=16000)
@@ -95,6 +101,15 @@ class EmbeddingExtractor:
         embeddings = {}
 
         with torch.no_grad():
+            # We need encoder outputs for decoder, so compute them if decoder layers are requested
+            encoder_outputs = None
+            if ('encoder' in layer_config and layer_config['encoder']) or \
+               ('decoder' in layer_config and layer_config['decoder']):
+                encoder_outputs = model.encoder(
+                    audio_inputs.input_features,
+                    output_hidden_states=True
+                )
+
             # CNN features (pre-transformer)
             if 'cnn' in layer_config and layer_config['cnn']:
                 mel = audio_inputs.input_features
@@ -104,12 +119,7 @@ class EmbeddingExtractor:
                 embeddings['cnn'] = self.pool_embeddings(features, pooling_method, pooling_position)
 
             # Encoder layers
-            if 'encoder' in layer_config and layer_config['encoder']:
-                encoder_outputs = model.encoder(
-                    audio_inputs.input_features,
-                    output_hidden_states=True
-                )
-
+            if 'encoder' in layer_config and layer_config['encoder'] and encoder_outputs:
                 # hidden_states[0] = embedding output
                 # hidden_states[1] = layer 0 output, etc.
                 for layer_idx in layer_config['encoder']:
@@ -120,28 +130,63 @@ class EmbeddingExtractor:
                             layer_output, pooling_method, pooling_position
                         )
 
-            # Decoder layers (requires text input)
-            if 'decoder' in layer_config and layer_config['decoder'] and text_label:
-                # Tokenize the text label
-                text_inputs = processor.tokenizer(text_label, return_tensors="pt")
-                decoder_input_ids = text_inputs.input_ids
+            # Decoder layers (use actual generation to transcribe audio)
+            if 'decoder' in layer_config and layer_config['decoder'] and encoder_outputs and gen_model:
+                try:
+                    # Generate transcription from audio (no teacher forcing)
+                    # This uses greedy decoding to predict the actual word
 
-                # Run decoder with encoder outputs
-                decoder_outputs = model.decoder(
-                    input_ids=decoder_input_ids,
-                    encoder_hidden_states=encoder_outputs.last_hidden_state,
-                    output_hidden_states=True
-                )
+                    # Prepare generation arguments
+                    generated = gen_model.generate(
+                        audio_inputs.input_features,
+                        max_new_tokens=10,  # Speech Commands are short words
+                        num_beams=1,  # Greedy decoding
+                        return_dict_in_generate=True,
+                        output_hidden_states=True,
+                        language="en",
+                        task="transcribe"
+                    )
 
-                # hidden_states[0] = embedding output
-                # hidden_states[1] = layer 0 output, etc.
-                for layer_idx in layer_config['decoder']:
-                    hidden_state_idx = layer_idx + 1
-                    if hidden_state_idx < len(decoder_outputs.hidden_states):
-                        layer_output = decoder_outputs.hidden_states[hidden_state_idx]
-                        embeddings[f'decoder_layer_{layer_idx}'] = self.pool_embeddings(
-                            layer_output, pooling_method, pooling_position
-                        )
+                    print(f"DEBUG: Generated object type: {type(generated)}")
+                    print(f"DEBUG: Generated attributes: {dir(generated)}")
+                    if hasattr(generated, 'decoder_hidden_states'):
+                        print(f"DEBUG: decoder_hidden_states type: {type(generated.decoder_hidden_states)}")
+                        if generated.decoder_hidden_states:
+                            print(f"DEBUG: Number of generation steps: {len(generated.decoder_hidden_states)}")
+                            if len(generated.decoder_hidden_states) > 0:
+                                print(f"DEBUG: Number of layers in step 0: {len(generated.decoder_hidden_states[0])}")
+                    else:
+                        print("DEBUG: No decoder_hidden_states attribute!")
+
+                    # generated.decoder_hidden_states is a tuple of tuples
+                    # Structure: (step_0_layers, step_1_layers, ...)
+                    # Each step_i_layers is a tuple of hidden states for each layer at generation step i
+
+                    # We want the FINAL generation step's hidden states (when word is fully formed)
+                    if hasattr(generated, 'decoder_hidden_states') and generated.decoder_hidden_states and len(generated.decoder_hidden_states) > 0:
+                        # Get the last generation step
+                        last_step_hidden_states = generated.decoder_hidden_states[-1]
+
+                        # last_step_hidden_states is a tuple: (layer_0, layer_1, ..., layer_N)
+                        # Each layer_i has shape [batch, 1, hidden_dim] (1 token generated at this step)
+
+                        for layer_idx in layer_config['decoder']:
+                            # hidden_states index: 0 = embedding, 1 = layer 0, 2 = layer 1, etc.
+                            hidden_state_idx = layer_idx + 1
+                            if hidden_state_idx < len(last_step_hidden_states):
+                                layer_output = last_step_hidden_states[hidden_state_idx]
+                                print(f"DEBUG: Layer {layer_idx} output shape: {layer_output.shape}")
+                                # layer_output shape: [batch, 1, hidden_dim]
+                                embeddings[f'decoder_layer_{layer_idx}'] = self.pool_embeddings(
+                                    layer_output, pooling_method, pooling_position
+                                )
+                    else:
+                        print(f"WARNING: Could not extract decoder hidden states for {audio_path}")
+
+                except Exception as e:
+                    print(f"ERROR during decoder generation for {audio_path}: {e}")
+                    import traceback
+                    traceback.print_exc()
 
         return embeddings
 
@@ -163,6 +208,7 @@ class EmbeddingExtractor:
         layer_configs = config['layer_configs']
         pooling_method = config['pooling_method']
         pooling_position = config['pooling_position']
+        layer_mode = config.get('layer_mode', 'individual')  # Default to individual
 
         # Collect file paths
         file_paths = []
@@ -218,8 +264,7 @@ class EmbeddingExtractor:
                     else:  # whisper
                         embeddings = self.extract_whisper_embeddings(
                             file_path, model_name, model_layer_config,
-                            pooling_method, pooling_position,
-                            text_label=label  # Use word label as text input
+                            pooling_method, pooling_position
                         )
 
                     # Store embeddings
@@ -239,21 +284,66 @@ class EmbeddingExtractor:
         print("\n" + "="*60)
         print("EXTRACTION SUMMARY")
         print("="*60)
-        for model_name in all_embeddings:
-            print(f"\nModel: {model_name}")
-            for emb_type in all_embeddings[model_name]:
-                all_embeddings[model_name][emb_type] = np.array(
-                    all_embeddings[model_name][emb_type]
-                )
-                shape = all_embeddings[model_name][emb_type].shape
-                print(f"  {emb_type}: {shape}")
+
+        # If concatenate mode, combine all layers per model
+        if layer_mode == 'concatenate':
+            concatenated_embeddings = {}
+
+            for model_name in all_embeddings:
+                print(f"\nModel: {model_name}")
+
+                # Convert to arrays first
+                for emb_type in all_embeddings[model_name]:
+                    all_embeddings[model_name][emb_type] = np.array(
+                        all_embeddings[model_name][emb_type]
+                    )
+
+                # Concatenate all layer embeddings
+                if len(all_embeddings[model_name]) > 0:
+                    # Get all embeddings for this model
+                    layer_embeddings = []
+                    layer_names = []
+
+                    for emb_type in sorted(all_embeddings[model_name].keys()):
+                        layer_embeddings.append(all_embeddings[model_name][emb_type])
+                        layer_names.append(emb_type)
+
+                    # Concatenate along feature dimension (axis=1)
+                    concatenated = np.concatenate(layer_embeddings, axis=1)
+
+                    # Store concatenated result
+                    concatenated_embeddings[model_name] = {
+                        'concatenated': concatenated,
+                        'layers_included': layer_names,
+                        'original_dims': [emb.shape[1] for emb in layer_embeddings],
+                        'total_dim': concatenated.shape[1]
+                    }
+
+                    print(f"  Concatenated {len(layer_names)} layers:")
+                    print(f"    Layers: {', '.join(layer_names)}")
+                    print(f"    Dimensions: {' + '.join(map(str, [emb.shape[1] for emb in layer_embeddings]))} = {concatenated.shape[1]}")
+                    print(f"    Final shape: {concatenated.shape}")
+
+            all_embeddings = concatenated_embeddings
+
+        else:  # Individual mode (existing behavior)
+            for model_name in all_embeddings:
+                print(f"\nModel: {model_name}")
+                for emb_type in all_embeddings[model_name]:
+                    all_embeddings[model_name][emb_type] = np.array(
+                        all_embeddings[model_name][emb_type]
+                    )
+                    shape = all_embeddings[model_name][emb_type].shape
+                    print(f"  {emb_type}: {shape}")
 
         print(f"\nTotal samples: {len(file_labels)}")
         print(f"Unique labels: {set(file_labels)}")
+        print(f"Layer mode: {layer_mode}")
         print("="*60 + "\n")
 
         return {
             'embeddings': all_embeddings,
             'labels': file_labels,
-            'config': config
+            'config': config,
+            'layer_mode': layer_mode
         }

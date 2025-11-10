@@ -106,6 +106,7 @@ def extract_embeddings():
         'layer_configs': data.get('layer_configs', {}),  # {model_name: {layer_type: [layer_nums]}}
         'pooling_method': data.get('pooling_method', 'mean'),
         'pooling_position': int(data.get('pooling_position', 10)),
+        'layer_mode': data.get('layer_mode', 'individual'),  # Add layer_mode
         'dataset_path': DATASET_PATH
     }
 

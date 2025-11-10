@@ -77,21 +77,15 @@ class Visualizer:
                     f"Please select more words or increase samples per word."
                 )
 
-            # Perplexity should be between 5 and 50, and less than n_samples
-            # Use heuristic: sqrt(n_samples) bounded by [5, 30]
-            perplexity = max(5, min(30, int(np.sqrt(n_samples))))
-            perplexity = min(perplexity, n_samples - 1)
-
             reducer = TSNE(
                 n_components=actual_components,
                 random_state=42,
                 metric='cosine',
                 max_iter=10000,
                 n_iter_without_progress=1000,
-                perplexity=perplexity
+                perplexity=min(30, n_samples - 1)  # Adjust perplexity based on sample size
             )
             reduced = reducer.fit_transform(embeddings)
-            print(f"t-SNE perplexity used: {perplexity}")
 
             # Pad with zeros if we had to reduce components
             if actual_components < n_components:
@@ -156,9 +150,6 @@ class Visualizer:
         labels = results['labels']
         layer_mode = results.get('layer_mode', 'individual')
 
-        # Store variance info for PCA plots
-        variance_info = {}
-
         # Validate we have data
         if not labels:
             raise ValueError("No samples found. Please check your configuration and try again.")
@@ -169,15 +160,10 @@ class Visualizer:
         # Check that we have valid embeddings
         valid_embeddings = False
         for model_name, emb_types in embeddings_dict.items():
-            if layer_mode == 'concatenate':
-                if 'concatenated' in emb_types:
+            for emb_type, emb_data in emb_types.items():
+                if len(emb_data) > 0:
                     valid_embeddings = True
                     break
-            else:
-                for emb_type, emb_data in emb_types.items():
-                    if len(emb_data) > 0:
-                        valid_embeddings = True
-                        break
             if valid_embeddings:
                 break
 
@@ -197,6 +183,7 @@ class Visualizer:
             methods.append('tsne')
 
         # Determine which dimensions to use
+        # If user selects 'both' or we want comprehensive view, generate both 2D and 3D
         dimension_configs = []
         if dimensions == '2d':
             dimension_configs = [('2d', 2)]
@@ -208,12 +195,9 @@ class Visualizer:
         for method in methods:
             for dim_name, n_components in dimension_configs:
                 # Count total number of embedding types across all models
-                if layer_mode == 'concatenate':
-                    total_plots = len(embeddings_dict)  # One plot per model
-                else:
-                    total_plots = sum(
-                        len(emb_types) for emb_types in embeddings_dict.values()
-                    )
+                total_plots = sum(
+                    len(emb_types) for emb_types in embeddings_dict.values()
+                )
 
                 # Calculate subplot grid
                 n_cols = min(3, total_plots)
@@ -225,7 +209,7 @@ class Visualizer:
                 else:
                     specs = [[{'type': 'scatter'} for _ in range(n_cols)] for _ in range(n_rows)]
 
-                # Create subplots - titles will be updated after variance calculation for PCA
+                # Create subplots
                 subplot_titles = []
                 plot_index = 0
 
@@ -249,30 +233,23 @@ class Visualizer:
                 print(f"  Grid: {n_rows}x{n_cols}, Total plots: {total_plots}")
                 print(f"  Titles: {subplot_titles}")
 
-                # Calculate spacing with minimum thresholds
-                vertical_spacing = max(0.05, min(0.15, 0.15 / n_rows)) if n_rows > 1 else 0.1
-                horizontal_spacing = max(0.05, min(0.1, 0.1 / n_cols)) if n_cols > 1 else 0.1
-
                 fig = make_subplots(
                     rows=n_rows,
                     cols=n_cols,
                     specs=specs,
                     subplot_titles=subplot_titles,
-                    vertical_spacing=vertical_spacing,
-                    horizontal_spacing=horizontal_spacing
+                    vertical_spacing=0.15 / n_rows if n_rows > 1 else 0.1,
+                    horizontal_spacing=0.1 / n_cols if n_cols > 1 else 0.1
                 )
 
                 # Add traces for each model and embedding type
                 plot_index = 0
                 for model_name, emb_types in embeddings_dict.items():
-                    embeddings_to_process = []
-
                     if layer_mode == 'concatenate':
                         # Handle concatenated embeddings
                         if 'concatenated' in emb_types:
                             embeddings = emb_types['concatenated']
                             emb_type = 'concatenated'
-                            embeddings_to_process = [(emb_type, embeddings)]
 
                             # Log embedding info
                             print(f"Processing {model_name} - Concatenated ({dim_name}):")
@@ -287,18 +264,14 @@ class Visualizer:
                         # Original individual mode
                         for emb_type in sorted(emb_types.keys()):
                             embeddings = emb_types[emb_type]
-                            embeddings_to_process.append((emb_type, embeddings))
 
-                    # Process each embedding
-                    for emb_type, embeddings in embeddings_to_process:
-                        # Skip if empty
-                        if len(embeddings) == 0:
-                            print(f"Warning: Skipping empty embeddings for {model_name} - {emb_type}")
-                            plot_index += 1
-                            continue
+                            # Skip if empty
+                            if len(embeddings) == 0:
+                                print(f"Warning: Skipping empty embeddings for {model_name} - {emb_type}")
+                                plot_index += 1
+                                continue
 
-                        # Log embedding shape for debugging
-                        if layer_mode != 'concatenate':
+                            # Log embedding shape for debugging
                             print(f"Processing {model_name} - {emb_type} ({dim_name}): shape {embeddings.shape}")
 
                         # Reduce dimensions
@@ -306,10 +279,6 @@ class Visualizer:
                             reduced_data, variance = self.reduce_dimensions(
                                 embeddings, method, n_components
                             )
-                            # Store variance for PCA (to potentially update titles later)
-                            if variance is not None:
-                                variance_key = f"{method}_{dim_name}_{plot_index}"
-                                variance_info[variance_key] = variance
                         except ValueError as e:
                             print(f"Error reducing dimensions for {model_name} - {emb_type}: {e}")
                             plot_index += 1
@@ -353,24 +322,10 @@ class Visualizer:
 
                     if dim_name == '3d':
                         scene_key = 'scene' if i == 1 else f'scene{i}'
-                        # Set equal aspect ratio for 3D plots to preserve distances
                         layout_updates[scene_key] = dict(
-                            xaxis=dict(
-                                title='Component 1',
-                                showgrid=True,
-                                showbackground=True
-                            ),
-                            yaxis=dict(
-                                title='Component 2',
-                                showgrid=True,
-                                showbackground=True
-                            ),
-                            zaxis=dict(
-                                title='Component 3',
-                                showgrid=True,
-                                showbackground=True
-                            ),
-                            aspectmode='cube',  # Force equal aspect ratio on all axes
+                            xaxis_title='Component 1',
+                            yaxis_title='Component 2',
+                            zaxis_title='Component 3',
                             camera=dict(
                                 eye=dict(x=1.5, y=1.5, z=1.5)
                             )
@@ -378,32 +333,10 @@ class Visualizer:
                     else:
                         xaxis_key = 'xaxis' if i == 1 else f'xaxis{i}'
                         yaxis_key = 'yaxis' if i == 1 else f'yaxis{i}'
-                        # scaleanchor needs format 'y', 'y2', 'y3' (without 'axis')
-                        scaleanchor_ref = 'y' if i == 1 else f'y{i}'
-                        # Set equal aspect ratio for 2D plots to preserve distances (critical for t-SNE)
-                        layout_updates[xaxis_key] = dict(
-                            title='Component 1',
-                            scaleanchor=scaleanchor_ref,  # Lock x-axis scale to y-axis
-                            scaleratio=1,                 # 1:1 aspect ratio
-                            constrain='domain'            # Constrain scaling to subplot domain
-                        )
-                        layout_updates[yaxis_key] = dict(
-                            title='Component 2',
-                            constrain='domain'
-                        )
+                        layout_updates[xaxis_key] = dict(title='Component 1')
+                        layout_updates[yaxis_key] = dict(title='Component 2')
 
                 fig.update_layout(**layout_updates)
-
-                # Update subplot titles to include variance for PCA
-                if method == 'pca' and variance_info:
-                    for i in range(len(subplot_titles)):
-                        variance_key = f"{method}_{dim_name}_{i}"
-                        if variance_key in variance_info:
-                            variance_pct = variance_info[variance_key] * 100
-                            # Update annotation text
-                            if i < len(fig.layout.annotations):
-                                current_text = fig.layout.annotations[i].text
-                                fig.layout.annotations[i].text = f"{current_text}<br><span style='font-size:10px'>Var: {variance_pct:.1f}%</span>"
 
                 # Convert to HTML - use False to not include Plotly.js (already loaded in template)
                 # Convert figure to JSON to avoid binary encoding issues

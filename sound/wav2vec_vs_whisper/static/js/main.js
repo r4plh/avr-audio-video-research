@@ -253,6 +253,7 @@ function extractEmbeddings() {
     let samplesPerWord = parseInt($('#samples-per-word').val());
     let poolingMethod = $('#pooling-method').val();
     let poolingPosition = parseInt($('#pooling-position').val());
+    let layerMode = $('#layer-mode').val();
 
     let config = {
         models: selectedModels,
@@ -260,7 +261,8 @@ function extractEmbeddings() {
         samples_per_word: samplesPerWord,
         layer_configs: layerConfig,
         pooling_method: poolingMethod,
-        pooling_position: poolingPosition
+        pooling_position: poolingPosition,
+        layer_mode: layerMode  // Add layer mode to config
     };
 
     // Calculate total operations for progress display

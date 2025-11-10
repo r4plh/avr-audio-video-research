@@ -156,6 +156,17 @@
                             </div>
 
                             <div class="mb-2">
+                                <label class="form-label small">Layer Mode:</label>
+                                <select class="form-select form-select-sm" id="layer-mode">
+                                    <option value="individual" selected>Individual (Separate plots per layer)</option>
+                                    <option value="concatenate">Concatenate (Combine all layers)</option>
+                                </select>
+                                <small class="text-muted" id="dimension-info" style="display: none;">
+                                    <i class="fas fa-info-circle"></i> <span id="dimension-text"></span>
+                                </small>
+                            </div>
+
+                            <div class="mb-2">
                                 <label class="form-label small">Pooling Method:</label>
                                 <select class="form-select form-select-sm" id="pooling-method">
                                     <option value="mean" selected>Mean</option>
