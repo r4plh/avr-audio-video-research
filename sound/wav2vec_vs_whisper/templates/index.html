@@ -17,7 +17,7 @@
                 Audio Model Embedding Visualizer
             </h1>
             <p class="text-center text-muted">
-                Compare Wav2Vec2 and Whisper model embeddings across different layers
+                Compare Wav2Vec2, Whisper, and DAC model embeddings across different layers
             </p>
         </header>
 
@@ -64,6 +64,24 @@
                                                id="whisper-{{ loop.index }}">
                                         <label class="form-check-label small" for="whisper-{{ loop.index }}">
                                             {{ model.name.split('/')[-1] }} <span class="text-muted">[{{ model.params }}]</span>
+                                        </label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">DAC Models:</label>
+                                <div class="model-checkboxes" id="dac-models">
+                                    {% for model in dac_models %}
+                                    <div class="form-check">
+                                        <input class="form-check-input model-checkbox dac-model"
+                                               type="checkbox"
+                                               value="{{ model.name }}"
+                                               id="dac-{{ loop.index }}">
+                                        <label class="form-check-label small" for="dac-{{ loop.index }}"
+                                               title="{{ model.description }}">
+                                            {{ model.name }} <span class="text-muted">[{{ model.params }}]</span>
                                         </label>
                                     </div>
                                     {% endfor %}

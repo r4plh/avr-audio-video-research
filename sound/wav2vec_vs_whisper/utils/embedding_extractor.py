@@ -190,6 +190,104 @@ class EmbeddingExtractor:
 
         return embeddings
 
+    def extract_dac_embeddings(self, audio_path: str, model_name: str,
+                               dac_strategy: str = 'indices_mean',
+                               time_index: int = 25) -> Dict[str, np.ndarray]:
+        """
+        Extract embeddings from DAC model using various strategies
+
+        Args:
+            audio_path: Path to audio file
+            model_name: DAC model name
+            dac_strategy: One of the 7 extraction strategies
+            time_index: Time index for temporal_slice strategy
+
+        Returns:
+            Dictionary with embedding_type: vector
+        """
+        dac_processor, _ = self.model_handler.load_model(model_name)
+
+        embeddings = {}
+
+        # Encode audio once
+        encoded = dac_processor.encode_audio(audio_path)
+        codes = encoded['codes'][0]  # [n_codebooks, time]
+
+        if dac_strategy == 'indices_mean':
+            # Strategy 1: Discrete indices with mean pooling
+            vector = codes.float().mean(dim=1).detach().cpu().numpy()
+            embeddings['indices_mean'] = vector
+
+        elif dac_strategy == 'indices_max':
+            # Strategy 2: Discrete indices with max pooling
+            vector = codes.float().max(dim=1)[0].detach().cpu().numpy()
+            embeddings['indices_max'] = vector
+
+        elif dac_strategy == 'embeddings_avg':
+            # Strategy 3: 8D codebook embeddings, averaged across codebooks + time
+            codebook_embs = dac_processor.get_codebook_embeddings(codes.unsqueeze(0))
+            vector = codebook_embs.mean(dim=[1, 2]).squeeze(0).detach().cpu().numpy()
+            embeddings['embeddings_avg'] = vector
+
+        elif dac_strategy == 'embeddings_concat':
+            # Strategy 4: 8D codebook embeddings, time-averaged, concat codebooks (96D)
+            codebook_embs = dac_processor.get_codebook_embeddings(codes.unsqueeze(0))  # [1, N, T, 8]
+            time_pooled = codebook_embs.mean(dim=2)  # [1, N, 8]
+            vector = time_pooled.reshape(1, -1).squeeze(0).detach().cpu().numpy()  # [96]
+            embeddings['embeddings_concat'] = vector
+
+        elif dac_strategy == 'latent_z':
+            # Strategy 5: Latent representation z (1024D)
+            z = encoded['z'][0]  # [1024, time]
+            vector = z.mean(dim=1).detach().cpu().numpy()  # [1024]
+            embeddings['latent_z'] = vector
+
+        elif dac_strategy == 'projections_concat':
+            # Strategy 6: Concatenated projections (12,288D)
+            codes_batch = codes.unsqueeze(0).to(dac_processor.device)  # [1, N, T]
+            N = codes_batch.shape[1]
+
+            codebook_projections = []
+            for i in range(N):
+                quantizer = dac_processor.model.quantizer.quantizers[i]
+                indices = codes_batch[:, i:i+1, :]  # [1, 1, T]
+                z_e = quantizer.embed_code(indices.squeeze(1))  # [1, T, 8]
+                z_q = quantizer.out_proj(z_e.transpose(1, 2))  # [1, 1024, T]
+                z_q_pooled = z_q.mean(dim=2)  # [1, 1024]
+                codebook_projections.append(z_q_pooled)
+
+            concatenated = torch.cat(codebook_projections, dim=1)  # [1, 12288]
+            vector = concatenated.squeeze(0).detach().cpu().numpy()
+            embeddings['projections_concat'] = vector
+
+        elif dac_strategy == 'temporal_slice':
+            # Strategy 7: Temporal slice at specific time index (12,288D)
+            codes_batch = codes.unsqueeze(0).to(dac_processor.device)  # [1, N, T]
+            N = codes_batch.shape[1]
+            T = codes_batch.shape[2]
+
+            # Validate time index
+            if time_index >= T:
+                time_index = T // 2  # Use middle if out of bounds
+
+            codebook_projections = []
+            for i in range(N):
+                quantizer = dac_processor.model.quantizer.quantizers[i]
+                indices = codes_batch[:, i:i+1, :]  # [1, 1, T]
+                z_e = quantizer.embed_code(indices.squeeze(1))  # [1, T, 8]
+                z_q = quantizer.out_proj(z_e.transpose(1, 2))  # [1, 1024, T]
+                z_q_slice = z_q[:, :, time_index]  # [1, 1024]
+                codebook_projections.append(z_q_slice)
+
+            concatenated = torch.cat(codebook_projections, dim=1)  # [1, 12288]
+            vector = concatenated.squeeze(0).detach().cpu().numpy()
+            embeddings['temporal_slice'] = vector
+
+        else:
+            raise ValueError(f"Unknown DAC strategy: {dac_strategy}")
+
+        return embeddings
+
     def extract_all(self, config: Dict[str, Any]) -> Dict[str, Any]:
         """
         Extract all embeddings based on configuration
@@ -239,13 +337,25 @@ class EmbeddingExtractor:
             model_layer_config = layer_configs.get(model_name, {})
 
             # Determine model type
-            if 'wav2vec' in model_name.lower():
+            if 'dac' in model_name.lower():
+                model_type = 'dac'
+            elif 'wav2vec' in model_name.lower():
                 model_type = 'wav2vec2'
             elif 'whisper' in model_name.lower():
                 model_type = 'whisper'
             else:
                 print(f"Unknown model type: {model_name}")
                 continue
+
+            # For DAC, get the strategy from layer_config
+            dac_strategy = 'indices_mean'  # default
+            dac_time_index = 25  # default
+            if model_type == 'dac' and 'extraction_strategy' in model_layer_config:
+                strategies = model_layer_config.get('extraction_strategy', [])
+                if strategies and len(strategies) > 0:
+                    dac_strategy = strategies[0]
+                # Get time index if specified
+                dac_time_index = model_layer_config.get('time_index', 25)
 
             # Process each file
             # Disable tqdm if not in terminal (e.g., web app context)
@@ -256,7 +366,11 @@ class EmbeddingExtractor:
                                         desc=f"Extracting {model_name}",
                                         disable=disable_progress):
                 try:
-                    if model_type == 'wav2vec2':
+                    if model_type == 'dac':
+                        embeddings = self.extract_dac_embeddings(
+                            file_path, model_name, dac_strategy, dac_time_index
+                        )
+                    elif model_type == 'wav2vec2':
                         embeddings = self.extract_wav2vec_embeddings(
                             file_path, model_name, model_layer_config,
                             pooling_method, pooling_position

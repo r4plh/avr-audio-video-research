@@ -133,8 +133,58 @@ function renderLayerSelection(modelInfo) {
 
         modelDiv.append(`<label class="form-label fw-bold small">${modelShort}:</label>`);
 
+        // DAC model - show extraction strategy dropdown
+        if (info.model_type === 'dac' && info.layers.extraction_strategy) {
+            let strategies = info.layers.extraction_strategy.strategies;
+            let dimensions = info.layers.extraction_strategy.dimensions;
+
+            modelDiv.append(`
+                <div class="mb-2">
+                    <label class="form-label small">Extraction Strategy:</label>
+                    <select class="form-select form-select-sm dac-strategy-select"
+                            data-model="${modelName}">
+                        ${strategies.map(s => `
+                            <option value="${s}">
+                                ${s.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                [${dimensions[s]}]
+                            </option>
+                        `).join('')}
+                    </select>
+                    <small class="text-muted d-block mt-1">
+                        <i class="fas fa-info-circle"></i>
+                        Each strategy extracts embeddings differently
+                    </small>
+                </div>
+            `);
+
+            // Add time index input for temporal_slice strategy
+            modelDiv.append(`
+                <div class="mb-2 dac-time-index-container" data-model="${modelName}" style="display: none;">
+                    <label class="form-label small">Time Index:</label>
+                    <input type="number"
+                           class="form-control form-control-sm dac-time-index"
+                           data-model="${modelName}"
+                           value="25"
+                           min="0"
+                           max="49">
+                    <small class="text-muted">Frame position to extract (0-49)</small>
+                </div>
+            `);
+
+            // Show/hide time index based on selected strategy
+            modelDiv.find('.dac-strategy-select').on('change', function() {
+                let strategy = $(this).val();
+                let timeIndexContainer = $(`.dac-time-index-container[data-model="${modelName}"]`);
+                if (strategy === 'temporal_slice') {
+                    timeIndexContainer.show();
+                } else {
+                    timeIndexContainer.hide();
+                }
+            });
+        }
+
         // CNN option
-        if (info.layers.cnn && info.layers.cnn.available) {
+        else if (info.layers.cnn && info.layers.cnn.available) {
             modelDiv.append(`
                 <div class="form-check">
                     <input class="form-check-input layer-checkbox"
@@ -207,6 +257,25 @@ function renderLayerSelection(modelInfo) {
 function getLayerConfig() {
     let config = {};
 
+    // Handle DAC models (strategy-based)
+    $('.dac-strategy-select').each(function() {
+        let model = $(this).data('model');
+        let strategy = $(this).val();
+
+        if (!config[model]) {
+            config[model] = {};
+        }
+
+        config[model]['extraction_strategy'] = [strategy];
+
+        // Add time index if temporal_slice is selected
+        if (strategy === 'temporal_slice') {
+            let timeIndex = parseInt($(`.dac-time-index[data-model="${model}"]`).val());
+            config[model]['time_index'] = timeIndex;
+        }
+    });
+
+    // Handle Wav2Vec2 and Whisper models (layer-based)
     $('.layer-checkbox:checked').each(function() {
         let model = $(this).data('model');
         let layerType = $(this).data('layer-type');

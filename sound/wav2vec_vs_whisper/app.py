@@ -48,6 +48,12 @@ WHISPER_MODELS = [
     {"name": "openai/whisper-medium.en", "params": "769M"},
 ]
 
+DAC_MODELS = [
+    {"name": "DAC-16khz", "params": "~73M", "description": "Descript Audio Codec (16kHz, Speech Commands compatible)"},
+    {"name": "DAC-24khz", "params": "~73M", "description": "Descript Audio Codec (24kHz)"},
+    {"name": "DAC-44khz", "params": "~73M", "description": "Descript Audio Codec (44.1kHz)"},
+]
+
 SPEECH_COMMANDS_WORDS = [
     # Digits (10)
     "zero", "one", "two", "three", "four",
@@ -72,6 +78,7 @@ def index():
     return render_template('index.html',
                          wav2vec_models=WAV2VEC_MODELS,
                          whisper_models=WHISPER_MODELS,
+                         dac_models=DAC_MODELS,
                          speech_words=SPEECH_COMMANDS_WORDS)
 
 

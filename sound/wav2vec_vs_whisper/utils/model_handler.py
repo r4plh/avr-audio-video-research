@@ -1,10 +1,16 @@
 import torch
+import sys
+from pathlib import Path
 from transformers import (
     Wav2Vec2Model, Wav2Vec2Processor,
     WhisperModel, WhisperProcessor,
     WhisperForConditionalGeneration
 )
 from typing import Dict, Any
+
+# Import DAC utilities
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+from dac_utils import DACProcessor
 
 
 class ModelHandler:
@@ -14,9 +20,14 @@ class ModelHandler:
         self.loaded_models = {}
         self.loaded_processors = {}
         self.loaded_generation_models = {}  # For WhisperForConditionalGeneration
+        self.loaded_dac_processors = {}  # For DAC models
 
     def load_model(self, model_name: str):
         """Load model and processor, cache them"""
+        # Handle DAC models separately
+        if 'dac' in model_name.lower():
+            return self.load_dac_model(model_name)
+
         if model_name in self.loaded_models:
             return self.loaded_models[model_name], self.loaded_processors[model_name]
 
@@ -48,6 +59,31 @@ class ModelHandler:
         self.loaded_processors[model_name] = processor
 
         return model, processor
+
+    def load_dac_model(self, model_name: str):
+        """Load DAC model"""
+        if model_name in self.loaded_dac_processors:
+            return self.loaded_dac_processors[model_name], None
+
+        print(f"Loading DAC model: {model_name}")
+
+        # Extract model type from name (e.g., "DAC-16khz" -> "16khz")
+        if '16khz' in model_name.lower():
+            model_type = '16khz'
+        elif '24khz' in model_name.lower():
+            model_type = '24khz'
+        elif '44khz' in model_name.lower():
+            model_type = '44khz'
+        else:
+            model_type = '16khz'  # Default
+
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        dac_processor = DACProcessor(model_type=model_type, device=device)
+
+        # Cache
+        self.loaded_dac_processors[model_name] = dac_processor
+
+        return dac_processor, None
 
     def load_generation_model(self, model_name: str):
         """Load Whisper generation model for decoder inference"""
@@ -85,7 +121,34 @@ class ModelHandler:
             'layers': {}
         }
 
-        if 'wav2vec' in model_name.lower():
+        if 'dac' in model_name.lower():
+            info['model_type'] = 'dac'
+            info['layers'] = {
+                'extraction_strategy': {
+                    'available': True,
+                    'strategies': [
+                        'indices_mean',
+                        'indices_max',
+                        'embeddings_avg',
+                        'embeddings_concat',
+                        'latent_z',
+                        'projections_concat',
+                        'temporal_slice'
+                    ],
+                    'description': 'DAC extraction strategies (select one)',
+                    'dimensions': {
+                        'indices_mean': '12D',
+                        'indices_max': '12D',
+                        'embeddings_avg': '8D',
+                        'embeddings_concat': '96D',
+                        'latent_z': '1024D',
+                        'projections_concat': '12,288D',
+                        'temporal_slice': '12,288D'
+                    }
+                }
+            }
+
+        elif 'wav2vec' in model_name.lower():
             info['model_type'] = 'wav2vec2'
             info['layers'] = {
                 'cnn': {
@@ -132,9 +195,13 @@ class ModelHandler:
             del self.loaded_models[model_name]
             del self.loaded_processors[model_name]
             torch.cuda.empty_cache()
+        if model_name in self.loaded_dac_processors:
+            del self.loaded_dac_processors[model_name]
+            torch.cuda.empty_cache()
 
     def unload_all(self):
         """Unload all models"""
         self.loaded_models.clear()
         self.loaded_processors.clear()
+        self.loaded_dac_processors.clear()
         torch.cuda.empty_cache()
