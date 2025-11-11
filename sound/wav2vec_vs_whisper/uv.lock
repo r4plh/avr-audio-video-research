@@ -6128,6 +6128,7 @@ name = "videoera"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "argbind" },
     { name = "descript-audiotools" },
     { name = "einops" },
     { name = "flask" },
@@ -6155,6 +6156,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "argbind", specifier = ">=0.3.9" },
     { name = "descript-audiotools", specifier = ">=0.7.2" },
     { name = "einops", specifier = ">=0.8.1" },
     { name = "flask", specifier = ">=3.0.0" },
