@@ -95,6 +95,30 @@
 
                         <hr>
 
+                        <!-- Step 1.5: Dataset Selection -->
+                        <div class="config-section">
+                            <h6 class="section-title">
+                                <i class="fas fa-database"></i> Select Dataset
+                            </h6>
+                            <div class="mb-3">
+                                {% for dataset in datasets %}
+                                <div class="form-check">
+                                    <input class="form-check-input dataset-radio"
+                                           type="radio"
+                                           name="dataset"
+                                           value="{{ dataset.path }}"
+                                           id="dataset-{{ loop.index }}"
+                                           {% if loop.index == 1 %}checked{% endif %}>
+                                    <label class="form-check-label small" for="dataset-{{ loop.index }}">
+                                        {{ dataset.name }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <hr>
+
                         <!-- Step 2: Layer Selection (dynamically populated) -->
                         <div class="config-section">
                             <h6 class="section-title">

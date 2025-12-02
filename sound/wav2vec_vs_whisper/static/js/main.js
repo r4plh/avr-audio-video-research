@@ -323,6 +323,7 @@ function extractEmbeddings() {
     let poolingMethod = $('#pooling-method').val();
     let poolingPosition = parseInt($('#pooling-position').val());
     let layerMode = $('#layer-mode').val();
+    let datasetPath = $('.dataset-radio:checked').val();  // Get selected dataset
 
     let config = {
         models: selectedModels,
@@ -331,7 +332,8 @@ function extractEmbeddings() {
         layer_configs: layerConfig,
         pooling_method: poolingMethod,
         pooling_position: poolingPosition,
-        layer_mode: layerMode  // Add layer mode to config
+        layer_mode: layerMode,  // Add layer mode to config
+        dataset_path: datasetPath  // Add selected dataset path
     };
 
     // Calculate total operations for progress display

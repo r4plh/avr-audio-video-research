@@ -318,7 +318,7 @@ class EmbeddingExtractor:
                 print(f"Warning: Directory not found for word '{word}': {word_dir}")
                 continue
 
-            files = [f for f in os.listdir(word_dir) if f.endswith('.wav')][:samples_per_word]
+            files = [f for f in os.listdir(word_dir) if f.endswith(('.wav', '.mp3'))][:samples_per_word]
 
             for file in files:
                 path = os.path.join(word_dir, file)

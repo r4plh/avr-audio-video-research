@@ -21,8 +21,13 @@ model_handler = ModelHandler()
 embedding_extractor = EmbeddingExtractor(model_handler)
 visualizer = Visualizer()
 
-# Dataset path
-DATASET_PATH = "/data/aman/speech_commands/speech_commands_v0.02/"
+# Dataset options
+DATASETS = [
+    {"name": "Speech Commands v0.02", "path": "/data/aman/speech_commands/speech_commands_v0.02/"},
+    {"name": "Clean Voice 200", "path": "/data/aman/speech_commands/speech_commands_clean_voice_200/"},
+    {"name": "Custom 200", "path": "/data/aman/speech_commands/speech_commands_custom_200/"},
+]
+DATASET_PATH = DATASETS[0]["path"]  # Default
 
 # Model lists with parameter counts
 WAV2VEC_MODELS = [
@@ -79,6 +84,7 @@ def index():
                          wav2vec_models=WAV2VEC_MODELS,
                          whisper_models=WHISPER_MODELS,
                          dac_models=DAC_MODELS,
+                         datasets=DATASETS,
                          speech_words=SPEECH_COMMANDS_WORDS)
 
 
@@ -114,7 +120,7 @@ def extract_embeddings():
         'pooling_method': data.get('pooling_method', 'mean'),
         'pooling_position': int(data.get('pooling_position', 10)),
         'layer_mode': data.get('layer_mode', 'individual'),  # Add layer_mode
-        'dataset_path': DATASET_PATH
+        'dataset_path': data.get('dataset_path', DATASET_PATH)  # Use selected dataset or default
     }
 
     try:
