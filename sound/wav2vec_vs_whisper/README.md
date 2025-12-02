@@ -106,13 +106,6 @@ cache/                      # Embeddings get saved here
 
 **Plots look weird?** Try the other reduction method. Sometimes PCA works better, sometimes t-SNE.
 
-## Troubleshooting
-
-**"Model not found" error**: Check your internet - first download needs to fetch from HuggingFace
-
-**Plots not showing**: Open browser console (F12), check for errors. Usually means embedding extraction failed.
-
-**Can't find dataset**: Update the path in `app.py` line 30 or use the dataset selector in the UI
 
 ## What's actually happening under the hood?
 
