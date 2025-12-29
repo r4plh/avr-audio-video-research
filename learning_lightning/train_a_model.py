@@ -49,7 +49,7 @@ dataset = MNIST(os.getcwd(), download=True, transform=transforms.ToTensor())
 train_loader = DataLoader(dataset)
 
 autoencoder = LitAutoEncoder(Encoder(), Decoder())
-trainer = L.Trainer(devices=1, accelerator="gpu")
+trainer = L.Trainer(devices=8, accelerator="gpu")
 trainer.fit(model=autoencoder, train_dataloaders=train_loader)
 
 
