@@ -7,8 +7,6 @@ from torchvision.datasets import MNIST
 from torch.utils.data import DataLoader
 import lightning as L
 
-
-
 class Encoder(nn.Module):
     def __init__(self):
         super().__init__()
