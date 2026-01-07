@@ -51,7 +51,7 @@ z_q_8dim = codebook[742]  # [8] - from lookup
 z_q_1 = out_proj(z_q_8dim)  # [1024] - learned projection
 ```
 
-This is important: out_proj is a learned linear transform, not a lookup table. The index selects the 8-dimensional vector; the shared projection turns it into 1024-dimensional. No matter which index (0-1023) is selected, the same projection matrix is used. Only the 8-D lookup vector changes, not the projection.
+This is important: out_proj is a learned linear transform, not a lookup table. The index selects the 8-dimensional vector; the projection turns it into 1024-dimensional (each of the 12 codebooks has its own in_proj/out_proj). No matter which index (0-1023) is selected, the same projection matrix is used. Only the 8-D lookup vector changes, not the projection.
 
 **Step 5 - Compute residual**:
 ```
