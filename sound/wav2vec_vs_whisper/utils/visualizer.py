@@ -155,6 +155,7 @@ class Visualizer:
         embeddings_dict = results['embeddings']
         labels = results['labels']
         layer_mode = results.get('layer_mode', 'individual')
+        dac_metadata = results.get('dac_metadata', {})
 
         # Store variance info for PCA plots
         variance_info = {}
@@ -242,7 +243,15 @@ class Visualizer:
                         for emb_type in sorted(emb_types.keys()):
                             # Create title
                             model_short = model_name.split('/')[-1]
-                            title = f"{model_short}<br>{emb_type}"
+
+                            # Add DAC metadata to title if available
+                            if model_name in dac_metadata:
+                                meta = dac_metadata[model_name]
+                                n_cb = meta['n_codebooks']
+                                emb_dim = emb_types[emb_type][0].shape[0] if len(emb_types[emb_type]) > 0 else '?'
+                                title = f"{model_short}<br>{emb_type} ({emb_dim}D)<br>Codebooks: {n_cb}"
+                            else:
+                                title = f"{model_short}<br>{emb_type}"
                             subplot_titles.append(title)
 
                 print(f"\n{method.upper()} - {dim_name.upper()}:")

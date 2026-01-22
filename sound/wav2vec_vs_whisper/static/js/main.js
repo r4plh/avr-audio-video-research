@@ -364,7 +364,15 @@ function extractEmbeddings() {
             $('#extract-embeddings').prop('disabled', false);
         },
         error: function(xhr) {
-            let errorMsg = xhr.responseJSON ? xhr.responseJSON.message : xhr.responseText;
+            let errorMsg = 'Unknown error';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMsg = xhr.responseJSON.message;
+            } else if (xhr.responseText) {
+                errorMsg = xhr.responseText;
+            } else if (xhr.status) {
+                errorMsg = 'Server error: ' + xhr.status + ' ' + xhr.statusText;
+            }
+            console.error('Extraction error:', xhr);
             showStatus('Error extracting embeddings: ' + errorMsg, 'danger');
             showProgress(false);
             $('#extract-embeddings').prop('disabled', false);

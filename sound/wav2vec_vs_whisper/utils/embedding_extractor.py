@@ -230,7 +230,7 @@ class EmbeddingExtractor:
             embeddings['embeddings_avg'] = vector
 
         elif dac_strategy == 'embeddings_concat':
-            # Strategy 4: 8D codebook embeddings, time-averaged, concat codebooks (96D)
+            # Strategy 4: 8D codebook embeddings, time-averaged, concat codebooks (N*8D: 96D for 16kHz, 72D for 24/44kHz)
             codebook_embs = dac_processor.get_codebook_embeddings(codes.unsqueeze(0))  # [1, N, T, 8]
             time_pooled = codebook_embs.mean(dim=2)  # [1, N, 8]
             vector = time_pooled.reshape(1, -1).squeeze(0).detach().cpu().numpy()  # [96]
@@ -243,7 +243,7 @@ class EmbeddingExtractor:
             embeddings['latent_z'] = vector
 
         elif dac_strategy == 'projections_concat':
-            # Strategy 6: Concatenated projections (12,288D)
+            # Strategy 6: Concatenated projections (N*1024D: 12,288D for 16kHz, 9,216D for 24/44kHz)
             codes_batch = codes.unsqueeze(0).to(dac_processor.device)  # [1, N, T]
             N = codes_batch.shape[1]
 
@@ -261,7 +261,7 @@ class EmbeddingExtractor:
             embeddings['projections_concat'] = vector
 
         elif dac_strategy == 'temporal_slice':
-            # Strategy 7: Temporal slice at specific time index (12,288D)
+            # Strategy 7: Temporal slice at specific time index (N*1024D: 12,288D for 16kHz, 9,216D for 24/44kHz)
             codes_batch = codes.unsqueeze(0).to(dac_processor.device)  # [1, N, T]
             N = codes_batch.shape[1]
             T = codes_batch.shape[2]
@@ -455,9 +455,29 @@ class EmbeddingExtractor:
         print(f"Layer mode: {layer_mode}")
         print("="*60 + "\n")
 
+        # Collect DAC metadata for visualization
+        dac_metadata = {}
+        for model_name in models:
+            if 'dac' in model_name.lower():
+                try:
+                    dac_processor, _ = self.model_handler.load_model(model_name)
+                    n_codebooks = dac_processor.model.n_codebooks
+                    codebook_dim = dac_processor.model.codebook_dim
+                    # codebook_dim can be int or list, get first value if list
+                    if isinstance(codebook_dim, list):
+                        codebook_dim = codebook_dim[0]
+                    dac_metadata[model_name] = {
+                        'n_codebooks': n_codebooks,
+                        'codebook_dim': codebook_dim,
+                        'strategy': layer_configs.get(model_name, {}).get('extraction_strategy', ['indices_mean'])[0] if layer_configs.get(model_name, {}).get('extraction_strategy') else 'indices_mean'
+                    }
+                except Exception as e:
+                    print(f"Warning: Could not get DAC metadata for {model_name}: {e}")
+
         return {
             'embeddings': all_embeddings,
             'labels': file_labels,
             'config': config,
-            'layer_mode': layer_mode
+            'layer_mode': layer_mode,
+            'dac_metadata': dac_metadata
         }

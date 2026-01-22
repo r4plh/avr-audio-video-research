@@ -123,6 +123,13 @@ class ModelHandler:
 
         if 'dac' in model_name.lower():
             info['model_type'] = 'dac'
+
+            # Determine number of codebooks based on model variant
+            if '16khz' in model_name.lower():
+                n_codebooks = 12
+            else:  # 24khz and 44khz use 9 codebooks
+                n_codebooks = 9
+
             info['layers'] = {
                 'extraction_strategy': {
                     'available': True,
@@ -137,13 +144,13 @@ class ModelHandler:
                     ],
                     'description': 'DAC extraction strategies (select one)',
                     'dimensions': {
-                        'indices_mean': '12D',
-                        'indices_max': '12D',
+                        'indices_mean': f'{n_codebooks}D',
+                        'indices_max': f'{n_codebooks}D',
                         'embeddings_avg': '8D',
-                        'embeddings_concat': '96D',
+                        'embeddings_concat': f'{n_codebooks * 8}D',
                         'latent_z': '1024D',
-                        'projections_concat': '12,288D',
-                        'temporal_slice': '12,288D'
+                        'projections_concat': f'{n_codebooks * 1024:,}D',
+                        'temporal_slice': f'{n_codebooks * 1024:,}D'
                     }
                 }
             }
