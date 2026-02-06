@@ -17,5 +17,5 @@ dependencies = [
 
 [tool.uv.workspace]
 members = [
-    "sound/wav2vec_vs_whisper",
+    "projects/audio_model_visualizer",
 ]
