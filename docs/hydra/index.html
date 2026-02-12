@@ -1,0 +1,1885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hydra — Your Personal Interactive Guide</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2333;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --accent: #58a6ff;
+    --accent2: #3fb950;
+    --accent3: #d2a8ff;
+    --accent4: #f0883e;
+    --accent5: #ff7b72;
+    --code-bg: #0d1117;
+    --highlight: #1f6feb22;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+  }
+
+  /* Layout */
+  .layout { display: flex; min-height: 100vh; }
+
+  /* Sidebar */
+  .sidebar {
+    width: 280px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 20px 0;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    overflow-y: auto;
+    z-index: 100;
+    transition: transform 0.3s;
+  }
+  .sidebar-header {
+    padding: 0 20px 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 10px;
+  }
+  .sidebar-header h1 {
+    font-size: 1.3rem;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .sidebar-header p {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+  .nav-section {
+    padding: 8px 20px 4px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+  .nav-link {
+    display: block;
+    padding: 6px 20px 6px 28px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.88rem;
+    border-left: 3px solid transparent;
+    transition: all 0.15s;
+  }
+  .nav-link:hover, .nav-link.active {
+    color: var(--text);
+    background: var(--highlight);
+    border-left-color: var(--accent);
+  }
+  .progress-bar {
+    margin: 16px 20px;
+    background: var(--border);
+    border-radius: 10px;
+    height: 6px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    width: 0%;
+    transition: width 0.5s;
+  }
+  .progress-text {
+    padding: 0 20px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  /* Main */
+  .main {
+    margin-left: 280px;
+    flex: 1;
+    max-width: 860px;
+    padding: 40px 50px 100px;
+  }
+
+  /* Typography */
+  h2 {
+    font-size: 1.8rem;
+    margin: 50px 0 10px;
+    color: var(--text);
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  h2:first-child { margin-top: 0; }
+  h3 {
+    font-size: 1.25rem;
+    margin: 30px 0 10px;
+    color: var(--accent3);
+  }
+  h4 {
+    font-size: 1.05rem;
+    margin: 20px 0 8px;
+    color: var(--accent4);
+  }
+  p { margin: 10px 0; color: var(--text); }
+  ul, ol { margin: 10px 0 10px 24px; }
+  li { margin: 4px 0; }
+
+  /* Sections */
+  .section {
+    scroll-margin-top: 20px;
+    animation: fadeIn 0.4s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Callouts */
+  .callout {
+    padding: 14px 18px;
+    border-radius: 8px;
+    margin: 16px 0;
+    border-left: 4px solid;
+    font-size: 0.92rem;
+  }
+  .callout-why {
+    background: #1f6feb15;
+    border-color: var(--accent);
+  }
+  .callout-why::before {
+    content: "🤔 Why does this matter?";
+    display: block;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: var(--accent);
+  }
+  .callout-key {
+    background: #3fb95015;
+    border-color: var(--accent2);
+  }
+  .callout-key::before {
+    content: "💡 Key Insight";
+    display: block;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: var(--accent2);
+  }
+  .callout-warn {
+    background: #f0883e15;
+    border-color: var(--accent4);
+  }
+  .callout-warn::before {
+    content: "⚠️ Watch Out";
+    display: block;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: var(--accent4);
+  }
+  .callout-novasr {
+    background: #d2a8ff10;
+    border-color: var(--accent3);
+  }
+  .callout-novasr::before {
+    content: "📂 In Your NovaSR Repo";
+    display: block;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: var(--accent3);
+  }
+  .callout-try {
+    background: #ff7b7210;
+    border-color: var(--accent5);
+  }
+  .callout-try::before {
+    content: "🧪 Try It Yourself";
+    display: block;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: var(--accent5);
+  }
+
+  /* Code blocks */
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    margin: 12px 0;
+    font-size: 0.85rem;
+    line-height: 1.55;
+    position: relative;
+  }
+  pre .label {
+    position: absolute;
+    top: 6px;
+    right: 10px;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    background: var(--surface);
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+  code {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
+    font-size: 0.88em;
+  }
+  :not(pre) > code {
+    background: var(--surface2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--accent);
+  }
+
+  /* Interactive toggles */
+  .toggle {
+    margin: 16px 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .toggle-header {
+    padding: 12px 16px;
+    background: var(--surface);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    font-size: 0.92rem;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .toggle-header:hover { background: var(--surface2); }
+  .toggle-arrow {
+    transition: transform 0.2s;
+    color: var(--accent);
+    font-size: 0.8rem;
+  }
+  .toggle.open .toggle-arrow { transform: rotate(90deg); }
+  .toggle-body {
+    display: none;
+    padding: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .toggle.open .toggle-body { display: block; }
+
+  /* Comparison table */
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 0.88rem;
+  }
+  .compare-table th {
+    background: var(--surface);
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 2px solid var(--accent);
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .compare-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .compare-table tr:hover { background: var(--highlight); }
+
+  /* File tree */
+  .file-tree {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-family: 'SF Mono', monospace;
+    font-size: 0.84rem;
+    line-height: 1.7;
+    margin: 12px 0;
+    white-space: pre;
+  }
+  .file-tree .folder { color: var(--accent); font-weight: 600; }
+  .file-tree .file { color: var(--text-muted); }
+  .file-tree .highlight { color: var(--accent2); font-weight: 600; }
+  .file-tree .comment { color: #6e7681; font-style: italic; }
+
+  /* Flow diagram */
+  .flow-diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    margin: 16px 0;
+    text-align: center;
+    font-family: 'SF Mono', monospace;
+    font-size: 0.85rem;
+    line-height: 2;
+    overflow-x: auto;
+  }
+  .flow-step {
+    display: inline-block;
+    background: var(--surface2);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    padding: 6px 14px;
+    margin: 4px;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .flow-arrow { color: var(--text-muted); margin: 0 6px; }
+
+  /* Quiz */
+  .quiz {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+  }
+  .quiz h4 { margin-top: 0; color: var(--accent5); }
+  .quiz-option {
+    display: block;
+    margin: 8px 0;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 0.9rem;
+  }
+  .quiz-option:hover { border-color: var(--accent); background: var(--highlight); }
+  .quiz-option.correct { border-color: var(--accent2); background: #3fb95020; }
+  .quiz-option.wrong { border-color: var(--accent5); background: #ff7b7220; }
+  .quiz-feedback {
+    margin-top: 10px;
+    padding: 10px 14px;
+    border-radius: 6px;
+    display: none;
+    font-size: 0.88rem;
+  }
+
+  /* Tabs */
+  .tabs { margin: 16px 0; }
+  .tab-headers {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .tab-header {
+    padding: 8px 18px;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+    font-weight: 500;
+  }
+  .tab-header:hover { color: var(--text); }
+  .tab-header.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  .tab-panel { display: none; padding-top: 4px; }
+  .tab-panel.active { display: block; }
+
+  /* Checked marks for progress */
+  .check-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+  }
+  .check-box {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .check-box.checked {
+    background: var(--accent2);
+    border-color: var(--accent2);
+  }
+  .check-box.checked::after {
+    content: "✓";
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  /* Mobile */
+  .menu-toggle {
+    display: none;
+    position: fixed;
+    top: 14px;
+    left: 14px;
+    z-index: 200;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: var(--text);
+    cursor: pointer;
+    font-size: 1.2rem;
+  }
+  @media (max-width: 900px) {
+    .sidebar { transform: translateX(-100%); }
+    .sidebar.open { transform: translateX(0); }
+    .main { margin-left: 0; padding: 30px 20px 80px; }
+    .menu-toggle { display: block; }
+  }
+
+  /* Smooth scrolling */
+  html { scroll-behavior: smooth; }
+
+  /* Annotation highlighting */
+  .hl-blue { color: var(--accent); font-weight: 600; }
+  .hl-green { color: var(--accent2); font-weight: 600; }
+  .hl-purple { color: var(--accent3); font-weight: 600; }
+  .hl-orange { color: var(--accent4); font-weight: 600; }
+  .hl-red { color: var(--accent5); font-weight: 600; }
+  .hl-muted { color: var(--text-muted); }
+</style>
+</head>
+<body>
+
+<button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+
+<div class="layout">
+<!-- Sidebar Navigation -->
+<nav class="sidebar">
+  <div class="sidebar-header">
+    <h1>🐍 Hydra Guide</h1>
+    <p>Personalized for your training runs</p>
+  </div>
+  <div class="progress-text"><span id="progress-count">0</span> / 10 sections completed</div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+
+  <div class="nav-section">Intro</div>
+  <a class="nav-link" href="#intro">What Hydra is & why it exists</a>
+  <a class="nav-link" href="#hydra-train">What train.py looks like with Hydra</a>
+
+  <div class="nav-section">The Problem</div>
+  <a class="nav-link" href="#problem">Why configs get messy</a>
+  <a class="nav-link" href="#what-is-hydra">What is Hydra, really?</a>
+
+  <div class="nav-section">Basics</div>
+  <a class="nav-link" href="#flat-config">Flat config file</a>
+  <a class="nav-link" href="#decorator">The @hydra.main decorator</a>
+  <a class="nav-link" href="#cli-overrides">CLI overrides</a>
+
+  <div class="nav-section">The Power Stuff</div>
+  <a class="nav-link" href="#config-groups">Config groups (folders)</a>
+  <a class="nav-link" href="#defaults-list">The defaults list</a>
+  <a class="nav-link" href="#composition">Composition — putting it together</a>
+
+  <div class="nav-section">Advanced</div>
+  <a class="nav-link" href="#target-pattern">_target_ and instantiation</a>
+  <a class="nav-link" href="#interpolation">Interpolation & resolvers</a>
+  <a class="nav-link" href="#output-dirs">Output directories</a>
+
+  <div class="nav-section">NovaSR Walkthrough</div>
+  <a class="nav-link" href="#novasr-full">Full NovaSR breakdown</a>
+  <a class="nav-link" href="#novasr-usage">Running experiments</a>
+  <a class="nav-link" href="#write-your-own">Write your own config</a>
+
+  <div class="nav-section">Reference</div>
+  <a class="nav-link" href="#cheatsheet">Cheat sheet</a>
+  <a class="nav-link" href="#checklist">Learning checklist</a>
+</nav>
+
+<!-- Main Content -->
+<div class="main">
+
+<!-- ================= SECTION: INTRO ================= -->
+<div class="section" id="intro">
+<h2>What Hydra Is & Why It Exists</h2>
+
+<p>When you train a model, your code already has everything defined — a model class with arguments like channels and layers, a dataloader with batch size and file paths, an optimizer with learning rate and weight decay. When you experiment, you're really just changing those arguments: different learning rate, different model size, different dataset path. Without Hydra, you either hardcode these values and edit them every time (messy, easy to forget what you changed), use argparse with a flat list of 50 flags (unorganized, no grouping, no record), or copy-paste JSON config files for each experiment (duplicated, naming chaos). Hydra lets you write those arguments in organized YAML files — model settings in one file, data settings in another, training settings in another — and merges them into a single config object that your code reads. You can swap any piece from the command line (<code>model=large data=local training.lr=1e-3</code>) without editing a single file, mix and match any combination without duplicating configs, and every run automatically gets its own output folder with the exact config saved — so you always know what arguments produced which result.</p>
+</div>
+
+<!-- ================= SECTION: HYDRA TRAIN.PY ================= -->
+<div class="section" id="hydra-train">
+<h2>What train.py Looks Like With Hydra</h2>
+
+<p>Before diving into details, here's the big picture — what a training script actually looks like when it uses Hydra:</p>
+
+<pre><code><span class="hl-muted"># train.py</span>
+import hydra
+from omegaconf import DictConfig
+
+<span class="hl-purple">@hydra.main</span>(version_base=None, config_path="configs", config_name="train")
+def train(<span class="hl-green">cfg</span>: DictConfig):
+    <span class="hl-muted"># cfg is the merged config object — Hydra built it for you
+    # from all your YAML files + any CLI overrides.
+    # You just use it:</span>
+
+    model = MyModel(
+        channels=<span class="hl-green">cfg</span>.model.channels,        <span class="hl-muted"># from model/default.yaml</span>
+        num_layers=<span class="hl-green">cfg</span>.model.num_layers,    <span class="hl-muted"># from model/default.yaml</span>
+    )
+
+    dataloader = get_dataloader(
+        path=<span class="hl-green">cfg</span>.data.dataset_path,          <span class="hl-muted"># from data/default.yaml</span>
+        batch_size=<span class="hl-green">cfg</span>.data.batch_size,      <span class="hl-muted"># from data/default.yaml</span>
+    )
+
+    optimizer = torch.optim.Adam(
+        model.parameters(),
+        lr=<span class="hl-green">cfg</span>.training.learning_rate,       <span class="hl-muted"># from training/default.yaml</span>
+    )
+
+    <span class="hl-muted"># ... your training loop using cfg values everywhere ...</span>
+
+<span class="hl-muted"># This is where Python starts.
+# It LOOKS like you're calling train() with no arguments.
+# But the @hydra.main decorator intercepts this call.
+#
+# What actually happens:
+#   1. Hydra reads all your YAML config files
+#   2. Merges them into one config object
+#   3. Applies any CLI overrides you passed
+#   4. Creates an output directory, saves the config
+#   5. THEN calls your train() function, passing cfg in for you
+#
+# So you never call train(cfg=...) yourself — Hydra does it.</span>
+if __name__ == "__main__":
+    train()</code></pre>
+
+<div class="callout callout-key">
+  Notice: your entire training script uses <code>cfg</code> for everything — model args, data args, training args. You never hardcode values, never use argparse, never load JSON files. Just <code>cfg.whatever</code>. And when you run it from the terminal, you can change any of those values without touching this file: <code>python train.py model.channels=128 training.learning_rate=1e-3 data=local</code>
+</div>
+
+<p>Now let's understand each piece in detail, starting with the problems Hydra solves.</p>
+</div>
+
+<!-- ================= SECTION: THE PROBLEM ================= -->
+<div class="section" id="problem">
+<h2>Why Config Management Gets Messy</h2>
+
+<p>Before we touch Hydra, let's understand the <strong>pain</strong> it solves. You've probably done one of these:</p>
+
+<div class="toggle open">
+  <div class="toggle-header" onclick="this.parentElement.classList.toggle('open')">
+    <span class="toggle-arrow">▶</span> Approach 1: Hardcoded values in your training script
+  </div>
+  <div class="toggle-body">
+<pre><code><span class="hl-muted"># train.py — everything hardcoded</span>
+learning_rate = 1e-4
+batch_size = 32
+num_epochs = 100
+model_name = "resnet50"
+dataset = "cifar10"
+
+<span class="hl-muted"># Want to try a different lr? Edit the file.
+# Want to try a different model? Edit the file.
+# Want to run 5 experiments? Edit the file 5 times.
+# Forgot what you ran last time? Good luck.</span></code></pre>
+    <p><span class="hl-red">Problem:</span> Every experiment requires editing your code. No record of what you ran. Easy to forget to change something back.</p>
+  </div>
+</div>
+
+<div class="toggle">
+  <div class="toggle-header" onclick="this.parentElement.classList.toggle('open')">
+    <span class="toggle-arrow">▶</span> Approach 2: argparse / command line arguments
+  </div>
+  <div class="toggle-body">
+<pre><code><span class="hl-muted"># train.py — argparse</span>
+parser = argparse.ArgumentParser()
+parser.add_argument("--lr", type=float, default=1e-4)
+parser.add_argument("--batch_size", type=int, default=32)
+parser.add_argument("--model", type=str, default="resnet50")
+parser.add_argument("--dataset", type=str, default="cifar10")
+parser.add_argument("--num_epochs", type=int, default=100)
+parser.add_argument("--optimizer", type=str, default="adam")
+parser.add_argument("--scheduler", type=str, default="cosine")
+parser.add_argument("--warmup_steps", type=int, default=500)
+<span class="hl-muted"># ... 30 more arguments ...</span>
+args = parser.parse_args()</code></pre>
+    <p><span class="hl-red">Problem 1 — It doesn't scale.</span> A real training run has 30-50+ parameters. Your script becomes a massive wall of <code>add_argument</code> calls. Hard to read, hard to maintain.</p>
+    <p><span class="hl-red">Problem 2 — Nested configs are awkward.</span> In practice, your config is <em>structured</em>. The model has its own settings (hidden_size, num_layers, dropout). The data has its own (batch_size, num_workers). The optimizer has its own (lr, weight_decay). With argparse, everything is flat:</p>
+<pre><code><span class="hl-muted"># argparse — everything is flat, no structure</span>
+parser.add_argument("--model_hidden_size", type=int, default=256)
+parser.add_argument("--model_num_layers", type=int, default=4)
+parser.add_argument("--model_dropout", type=float, default=0.1)
+parser.add_argument("--data_batch_size", type=int, default=32)
+parser.add_argument("--data_num_workers", type=int, default=4)
+parser.add_argument("--optim_lr", type=float, default=1e-4)
+parser.add_argument("--optim_weight_decay", type=float, default=0.01)
+<span class="hl-muted"># No grouping. No hierarchy. Just a flat list of 50 arguments.
+# In code you write: args.model_hidden_size (ugly prefix-based naming)
+# Compare to Hydra: cfg.model.hidden_size (clean, grouped, readable)</span></code></pre>
+    <p>You end up inventing naming conventions like <code>model_</code> prefix to fake structure. And if you want to pass all model args to a function, you have to pick them out one by one — there's no <code>args.model</code> that gives you all model settings as a group.</p>
+    <p><span class="hl-red">Problem 3 — No record of what you ran.</span> You run <code>python train.py --lr 0.01 --batch_size 64</code>. It finishes. Next day: "what lr did I use for that good run?" You have no idea unless you manually logged it or your terminal history is still there.</p>
+  </div>
+</div>
+
+<div class="toggle">
+  <div class="toggle-header" onclick="this.parentElement.classList.toggle('open')">
+    <span class="toggle-arrow">▶</span> Approach 3: JSON / Python dict config files
+  </div>
+  <div class="toggle-body">
+<pre><code><span class="hl-muted"># config.json</span>
+{
+  "model": {"name": "resnet50", "channels": 64},
+  "data": {"name": "cifar10", "batch_size": 32},
+  "training": {"lr": 1e-4, "epochs": 100}
+}
+
+<span class="hl-muted"># train.py</span>
+with open("config.json") as f:
+    config = json.load(f)</code></pre>
+    <p><span class="hl-orange">Better!</span> But: want to change <em>one thing</em> for an experiment? Copy the whole file. Now you have <code>config_v1.json</code>, <code>config_v2.json</code>, <code>config_v2_lr1e3.json</code>... Name soup. And to override from CLI, you still need argparse on top.</p>
+  </div>
+</div>
+
+<h3>The "No Record" Problem — All 3 Approaches Have It</h3>
+<p>This is worth calling out because it bites everyone eventually:</p>
+<ul>
+  <li><strong>Hardcoded:</strong> You edit <code>lr = 0.01</code>, run training, get good results. Next day you edit it to <code>lr = 0.001</code> for another experiment. Now the file says <code>0.001</code> — the <code>0.01</code> that gave good results is gone forever. Unless you remembered to write it down somewhere.</li>
+  <li><strong>Argparse:</strong> You ran <code>python train.py --lr 0.01 --batch_size 64 --model resnet --scheduler cosine --warmup 500</code>. Training finishes. A week later: "what exact command did I run for that good checkpoint?" — you check terminal history, but it's been cleared. Or you ran it from a different machine. Gone.</li>
+  <li><strong>JSON config:</strong> Better — the file exists on disk. But you made 5 copies: <code>config_v1.json</code>, <code>config_v2_lr.json</code>, <code>config_final.json</code>, <code>config_final_v2.json</code>. Which one produced which checkpoint? You have to match filenames by memory.</li>
+</ul>
+
+<h3>How Hydra Solves This — Automatic Output Directories</h3>
+<p>Every single time you run a Hydra app, it <strong>automatically creates a folder</strong> and saves the <strong>exact config</strong> that was used. Here's what actually happens:</p>
+
+<pre><code><span class="hl-muted"># You run this command:</span>
+$ python -m novasr.scripts.train data=local training.learning_rate=5e-5
+
+<span class="hl-muted"># Hydra automatically creates this folder:</span>
+outputs/novasr/brave-tiger_20240127_143015/</code></pre>
+
+<p>And inside that folder, Hydra saves these files <strong>without you writing any code</strong>:</p>
+
+<div class="file-tree"><span class="folder">outputs/novasr/brave-tiger_20240127_143015/</span>
+├── <span class="folder">.hydra/</span>                          <span class="comment">← Hydra auto-creates this</span>
+│   ├── <span class="highlight">config.yaml</span>                  <span class="comment">← THE FULL MERGED CONFIG (all values)</span>
+│   ├── <span class="highlight">overrides.yaml</span>               <span class="comment">← exactly what you typed on CLI</span>
+│   └── <span class="file">hydra.yaml</span>                   <span class="comment">← Hydra's own internal config</span>
+├── <span class="file">train.log</span>                        <span class="comment">← your app's log output</span>
+└── <span class="folder">checkpoints/</span>                     <span class="comment">← your model saves (you create these)</span></div>
+
+<p>Let's look at what's inside those auto-saved files:</p>
+
+<div class="tabs">
+  <div class="tab-headers">
+    <div class="tab-header active" onclick="switchTab(this, 'record-config')">config.yaml (the full config)</div>
+    <div class="tab-header" onclick="switchTab(this, 'record-overrides')">overrides.yaml (what you typed)</div>
+  </div>
+  <div class="tab-panel active" id="record-config">
+<pre><code><span class="hl-muted"># .hydra/config.yaml — the COMPLETE resolved config
+# Every single value that was used in this run, merged from all files + CLI</span>
+data:
+  audio_dir: /path/to/audio/files
+  batch_size: 64
+  num_workers: 4
+  min_duration_sec: 3.0
+  validation_ratio: 0.1
+model:
+  resblock: "0"
+  resblock_kernel_sizes:
+    - 11
+  upsample_initial_channel: 32
+training:
+  learning_rate: 5e-05        <span class="hl-green"># ← your CLI override is baked in here</span>
+  max_epochs: 20
+  scheduler: cosine
+seed: 42
+checkpoint_path: null</code></pre>
+    <p>This is the <strong>single source of truth</strong>. No guessing. No "which config file did I use?" — it's all here, fully resolved.</p>
+  </div>
+  <div class="tab-panel" id="record-overrides">
+<pre><code><span class="hl-muted"># .hydra/overrides.yaml — just the CLI overrides you typed</span>
+- data=local
+- training.learning_rate=5e-5</code></pre>
+    <p>This tells you: "you started with defaults and changed these two things." So you can re-run the exact same experiment by copy-pasting these overrides.</p>
+  </div>
+</div>
+
+<div class="callout callout-key">
+  Think about it: you run 20 experiments over a week. Each one has its own folder with the exact config saved. Found a great checkpoint? Open its <code>.hydra/config.yaml</code> — you know exactly what produced it. Want to re-run it? Copy the overrides. <strong>Zero manual bookkeeping.</strong>
+</div>
+
+<div class="callout callout-why">
+  The real issue: you want to define your config <strong>once</strong>, be able to swap pieces in and out (different model? different dataset? different optimizer?), override anything from the command line, and <strong>automatically save</strong> exactly what you ran. That's what Hydra does.
+</div>
+</div>
+
+<!-- ================= SECTION: WHAT IS HYDRA ================= -->
+<div class="section" id="what-is-hydra">
+<h2>What Is Hydra, Really?</h2>
+
+<p>Hydra is a Python framework by Meta (Facebook Research) that does <strong>three things</strong>:</p>
+
+<table class="compare-table">
+  <tr>
+    <th>#</th><th>What it does</th><th>In plain English</th>
+  </tr>
+  <tr>
+    <td>1</td>
+    <td><strong>Config composition</strong></td>
+    <td>You have separate YAML files for model, data, optimizer, etc. Hydra <em>merges</em> them into one config object for your code.</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td><strong>CLI overrides</strong></td>
+    <td>Change <em>any</em> parameter from the command line without touching files. <code>training.lr=1e-3</code> — done.</td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td><strong>Auto-saves what you ran</strong></td>
+    <td>Every run gets its own output folder with the exact config that was used. You can always reproduce it.</td>
+  </tr>
+</table>
+
+<div class="callout callout-key">
+  Think of Hydra as a LEGO system for configs. Each YAML file is a LEGO brick. You pick which bricks you want (model A + data B + optimizer C), Hydra snaps them together, and you get one config object in your Python code.
+</div>
+
+<p>Under the hood, Hydra uses <strong>OmegaConf</strong> — a library that makes YAML files behave like Python objects. So if your YAML has <code>model.channels: 64</code>, in code you write <code>cfg.model.channels</code> and get <code>64</code>. That's it.</p>
+</div>
+
+<!-- ================= SECTION: FLAT CONFIG ================= -->
+<div class="section" id="flat-config">
+<h2>Level 1: A Single Flat Config File</h2>
+
+<p>The simplest way to use Hydra. One Python file, one YAML file. Let's build it step by step.</p>
+
+<h3>Step 1: Create your config YAML</h3>
+<pre><code><span class="hl-muted"># configs/experiment.yaml</span>
+<span class="hl-blue">model</span>:
+  name: simple_cnn
+  channels: 32
+  num_classes: 10
+
+<span class="hl-green">training</span>:
+  learning_rate: 0.001
+  batch_size: 64
+  num_epochs: 50</code></pre>
+
+<p>That's just a YAML file — keys and values, nested with indentation. Nothing fancy.</p>
+
+<h3>Step 2: Load it in your Python script</h3>
+<pre><code><span class="hl-muted"># train.py</span>
+import hydra
+from omegaconf import DictConfig
+
+<span class="hl-purple">@hydra.main</span>(version_base=None, config_path="configs", config_name="experiment")
+def train(cfg: DictConfig):
+    <span class="hl-muted"># Access values with dot notation — like a Python object!</span>
+    print(cfg.model.name)           <span class="hl-muted"># "simple_cnn"</span>
+    print(cfg.model.channels)       <span class="hl-muted"># 32</span>
+    print(cfg.training.learning_rate) <span class="hl-muted"># 0.001</span>
+
+if __name__ == "__main__":
+    train()</code></pre>
+
+<div class="callout callout-why">
+  <strong>Why <code>@hydra.main</code>?</strong> This decorator is the "entry point" — it tells Hydra: "Before running this function, go load that YAML file and hand it to me as <code>cfg</code>." Without it, Hydra doesn't know where your config lives.
+</div>
+
+<h3>What the decorator parameters mean</h3>
+<table class="compare-table">
+  <tr><th>Parameter</th><th>What it does</th><th>Example</th></tr>
+  <tr>
+    <td><code>version_base</code></td>
+    <td>Hydra API version. Use <code>None</code> for latest behavior.</td>
+    <td><code>version_base=None</code></td>
+  </tr>
+  <tr>
+    <td><code>config_path</code></td>
+    <td>Folder where your YAML files live, <strong>relative to this Python file</strong>.</td>
+    <td><code>config_path="configs"</code> or <code>config_path="../configs"</code></td>
+  </tr>
+  <tr>
+    <td><code>config_name</code></td>
+    <td>Name of the YAML file to load (without <code>.yaml</code>).</td>
+    <td><code>config_name="experiment"</code> loads <code>experiment.yaml</code></td>
+  </tr>
+</table>
+
+<div class="callout callout-try">
+  Create a folder with <code>configs/experiment.yaml</code> and <code>train.py</code> as shown above. Run it with: <code>python train.py</code>. Then try: <code>python train.py model.channels=64 training.learning_rate=0.01</code> — see how the values change without touching any file!
+</div>
+
+<h3>Multiple experiments with flat files</h3>
+<p>You can have multiple YAML files and switch between them from the command line:</p>
+<pre><code><span class="hl-muted"># configs/exp1.yaml — baseline</span>
+model:
+  name: simple_cnn
+  channels: 32
+training:
+  learning_rate: 0.001
+  num_epochs: 50
+
+<span class="hl-muted"># configs/exp2.yaml — bigger model, more epochs</span>
+model:
+  name: simple_cnn
+  channels: 64
+  num_classes: 10
+training:
+  learning_rate: 0.0005
+  num_epochs: 100</code></pre>
+
+<pre><code><span class="hl-muted"># Run experiment 1</span>
+$ python train.py --config-name=exp1
+
+<span class="hl-muted"># Run experiment 2</span>
+$ python train.py --config-name=exp2
+
+<span class="hl-muted"># Run experiment 2 but override learning rate</span>
+$ python train.py --config-name=exp2 training.learning_rate=0.001</code></pre>
+
+<div class="callout callout-warn">
+  Flat files work for simple cases, but you'll notice a problem: <code>exp2.yaml</code> has to repeat <em>everything</em> from <code>exp1.yaml</code> even if only 2 things changed. That's where config groups and composition come in — the real power of Hydra.
+</div>
+</div>
+
+<!-- ================= SECTION: DECORATOR ================= -->
+<div class="section" id="decorator">
+<h2>The @hydra.main Decorator — How It Actually Works</h2>
+
+<p>Let's demystify what happens when Python hits <code>@hydra.main</code>:</p>
+
+<div class="flow-diagram">
+  <span class="flow-step">You run: python train.py</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">Hydra reads decorator params</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">Loads YAML from config_path/config_name</span>
+  <br>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">Applies CLI overrides</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">Creates output dir</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">Calls your function with cfg</span>
+</div>
+
+<p>Key detail: <strong>by the time your function runs, everything is already resolved</strong>. The <code>cfg</code> you receive is a fully-merged, ready-to-use config object.</p>
+
+<h3>The cfg object is a DictConfig</h3>
+<p><code>DictConfig</code> comes from OmegaConf. It behaves like a Python object <em>and</em> a dictionary:</p>
+<pre><code><span class="hl-muted"># Both of these work:</span>
+cfg.model.channels      <span class="hl-muted"># dot notation (cleaner)</span>
+cfg["model"]["channels"] <span class="hl-muted"># dict notation (also works)</span>
+
+<span class="hl-muted"># Safe access with defaults (won't crash if key missing):</span>
+cfg.training.get("warmup_steps", 0)   <span class="hl-muted"># returns 0 if warmup_steps not in config</span>
+
+<span class="hl-muted"># Convert to plain Python dict when needed:</span>
+from omegaconf import OmegaConf
+plain_dict = OmegaConf.to_container(cfg, resolve=True)
+
+<span class="hl-muted"># Print the whole config as readable YAML:</span>
+print(OmegaConf.to_yaml(cfg))</code></pre>
+
+<div class="callout callout-key">
+  <strong><code>.get(key, default)</code></strong> is your friend. Use it whenever a config key might not exist. This is how NovaSR handles optional parameters like <code>cfg.training.get("use_gan", False)</code>.
+</div>
+</div>
+
+<!-- ================= SECTION: CLI OVERRIDES ================= -->
+<div class="section" id="cli-overrides">
+<h2>CLI Overrides — Change Anything Without Touching Files</h2>
+
+<p>This is one of Hydra's most useful features. Any value in your config can be changed from the command line.</p>
+
+<h3>The syntax</h3>
+<table class="compare-table">
+  <tr><th>Syntax</th><th>What it does</th><th>Example</th></tr>
+  <tr>
+    <td><code>key=value</code></td>
+    <td>Override an existing value</td>
+    <td><code>training.lr=0.01</code></td>
+  </tr>
+  <tr>
+    <td><code>+key=value</code></td>
+    <td>Add a <strong>new</strong> key that doesn't exist yet</td>
+    <td><code>+experiment_tag=baseline</code></td>
+  </tr>
+  <tr>
+    <td><code>++key=value</code></td>
+    <td>Override if exists, add if doesn't</td>
+    <td><code>++training.warmup=100</code></td>
+  </tr>
+  <tr>
+    <td><code>~key</code></td>
+    <td>Remove a key entirely</td>
+    <td><code>~training.scheduler</code></td>
+  </tr>
+  <tr>
+    <td><code>group=option</code></td>
+    <td>Switch which config file to use for a group</td>
+    <td><code>model=large</code> (picks <code>model/large.yaml</code>)</td>
+  </tr>
+</table>
+
+<h3>Examples in practice</h3>
+<pre><code><span class="hl-muted"># Override a nested value</span>
+$ python train.py training.learning_rate=0.01
+
+<span class="hl-muted"># Override multiple values at once</span>
+$ python train.py training.learning_rate=0.01 training.batch_size=16 model.channels=128
+
+<span class="hl-muted"># Use a different config group option</span>
+$ python train.py data=local trainer=ddp
+
+<span class="hl-muted"># Mix group switching + value overrides</span>
+$ python train.py data=local data.batch_size=128 trainer=ddp</code></pre>
+
+<div class="callout callout-why">
+  <strong>Why is this useful?</strong> Say you found a good config and want to try 3 learning rates. Without Hydra you'd copy the config 3 times, or add argparse. With Hydra: run the same command 3 times with <code>training.lr=1e-3</code>, <code>training.lr=1e-4</code>, <code>training.lr=1e-5</code>. Each run auto-saves its config so you know exactly what ran.
+</div>
+
+<div class="callout callout-novasr">
+  This is exactly how NovaSR experiments work:
+  <pre><code># Default training
+uv run python -m novasr.scripts.train
+
+# Same thing but with local data and multiple GPUs
+uv run python -m novasr.scripts.train data=local trainer=ddp
+
+# Quick debug run — just override a few things
+uv run python -m novasr.scripts.train data.sample_amount=10 training.max_epochs=1</code></pre>
+</div>
+</div>
+
+<!-- ================= SECTION: CONFIG GROUPS ================= -->
+<div class="section" id="config-groups">
+<h2>Config Groups — The Folder System</h2>
+
+<p>This is where Hydra goes from "nice" to "wow". Instead of one big YAML file, you split your config into <strong>groups</strong> — each group is a <strong>folder</strong>, and each option in that group is a <strong>file in that folder</strong>.</p>
+
+<h3>The concept</h3>
+<p>Think of it like a menu at a restaurant:</p>
+<ul>
+  <li><strong>Model</strong> group: pick <code>simple_cnn</code> or <code>resnet</code> or <code>large</code></li>
+  <li><strong>Data</strong> group: pick <code>cifar10</code> or <code>imagenet</code> or <code>local</code></li>
+  <li><strong>Optimizer</strong> group: pick <code>adam</code> or <code>sgd</code> or <code>adamw</code></li>
+</ul>
+<p>Each "menu category" is a folder. Each "menu item" is a YAML file in that folder. You pick one from each category, and Hydra combines them.</p>
+
+<h3>Directory structure</h3>
+<div class="file-tree"><span class="folder">configs/</span>
+├── <span class="highlight">train.yaml</span>           <span class="comment">← main config (picks defaults)</span>
+├── <span class="folder">model/</span>               <span class="comment">← "model" group</span>
+│   ├── <span class="file">simple_cnn.yaml</span>  <span class="comment">← option 1</span>
+│   └── <span class="file">resnet.yaml</span>      <span class="comment">← option 2</span>
+├── <span class="folder">data/</span>                <span class="comment">← "data" group</span>
+│   ├── <span class="file">cifar10.yaml</span>     <span class="comment">← option 1</span>
+│   └── <span class="file">local.yaml</span>       <span class="comment">← option 2</span>
+└── <span class="folder">optimizer/</span>           <span class="comment">← "optimizer" group</span>
+    ├── <span class="file">adam.yaml</span>        <span class="comment">← option 1</span>
+    └── <span class="file">sgd.yaml</span>         <span class="comment">← option 2</span></div>
+
+<div class="callout callout-why">
+  <strong>Why folders?</strong> The folder name becomes the "group name". The file name becomes the "option name". When you say <code>model=resnet</code> on the CLI, Hydra looks for <code>configs/model/resnet.yaml</code>. That's the whole mapping. Folder name = group name. File name = option name.
+</div>
+
+<h3>What goes in each file</h3>
+
+<div class="tabs">
+  <div class="tab-headers">
+    <div class="tab-header active" onclick="switchTab(this, 'grp-model')">model/simple_cnn.yaml</div>
+    <div class="tab-header" onclick="switchTab(this, 'grp-data')">data/cifar10.yaml</div>
+    <div class="tab-header" onclick="switchTab(this, 'grp-opt')">optimizer/adam.yaml</div>
+  </div>
+  <div class="tab-panel active" id="grp-model">
+<pre><code><span class="hl-muted"># model/simple_cnn.yaml</span>
+name: simple_cnn
+channels: 32
+num_classes: 10</code></pre>
+    <p>Just the model-specific settings. Nothing else. Clean and focused.</p>
+  </div>
+  <div class="tab-panel" id="grp-data">
+<pre><code><span class="hl-muted"># data/cifar10.yaml</span>
+name: cifar10
+batch_size: 64
+num_workers: 4</code></pre>
+  </div>
+  <div class="tab-panel" id="grp-opt">
+<pre><code><span class="hl-muted"># optimizer/adam.yaml</span>
+name: adam
+learning_rate: 0.001
+weight_decay: 0.0001</code></pre>
+  </div>
+</div>
+
+<h3>How to switch between options</h3>
+<pre><code><span class="hl-muted"># Use simple_cnn (default)</span>
+$ python train.py
+
+<span class="hl-muted"># Switch to resnet</span>
+$ python train.py model=resnet
+
+<span class="hl-muted"># Switch model AND data</span>
+$ python train.py model=resnet data=local
+
+<span class="hl-muted"># Switch model + override a specific value</span>
+$ python train.py model=resnet model.channels=128</code></pre>
+
+<div class="callout callout-key">
+  Notice: <code>model=resnet</code> (no dot) switches which <em>file</em> to load. <code>model.channels=128</code> (with dot) changes a <em>value</em> inside that file. Two different operations, easy to tell apart.
+</div>
+</div>
+
+<!-- ================= SECTION: DEFAULTS LIST ================= -->
+<div class="section" id="defaults-list">
+<h2>The Defaults List — The Menu Order</h2>
+
+<p>The defaults list is the heart of your main config file. It tells Hydra: "For each group, which option should I use by default?"</p>
+
+<h3>Basic syntax</h3>
+<pre><code><span class="hl-muted"># configs/train.yaml</span>
+<span class="hl-blue">defaults</span>:
+  - model: simple_cnn     <span class="hl-muted"># loads model/simple_cnn.yaml</span>
+  - data: cifar10          <span class="hl-muted"># loads data/cifar10.yaml</span>
+  - optimizer: adam        <span class="hl-muted"># loads optimizer/adam.yaml</span>
+  - _self_                 <span class="hl-muted"># ← important! explained below</span>
+
+<span class="hl-muted"># You can also have config-level values here:</span>
+seed: 42
+experiment_name: baseline</code></pre>
+
+<h3>What is <code>_self_</code> and why do you need it?</h3>
+
+<p>The <code>_self_</code> entry controls <strong>override order</strong>. When Hydra merges all the configs together, stuff listed <em>later</em> in the defaults list overrides stuff listed <em>earlier</em>.</p>
+
+<div class="tabs">
+  <div class="tab-headers">
+    <div class="tab-header active" onclick="switchTab(this, 'self-end')">_self_ at end (common)</div>
+    <div class="tab-header" onclick="switchTab(this, 'self-start')">_self_ at start</div>
+  </div>
+  <div class="tab-panel active" id="self-end">
+<pre><code>defaults:
+  - model: simple_cnn
+  - data: cifar10
+  - <span class="hl-green">_self_</span>              <span class="hl-muted"># ← "my values win over group files"</span>
+
+<span class="hl-muted"># If model/simple_cnn.yaml has seed: 123
+# and this file has seed: 42
+# → seed will be 42 (this file wins because _self_ is last)</span></code></pre>
+    <p><span class="hl-green">This is the most common pattern.</span> Values in your main config file override anything from the group files.</p>
+  </div>
+  <div class="tab-panel" id="self-start">
+<pre><code>defaults:
+  - <span class="hl-orange">_self_</span>              <span class="hl-muted"># ← "group files win over my values"</span>
+  - model: simple_cnn
+  - data: cifar10
+
+<span class="hl-muted"># Now group files override values in this file</span></code></pre>
+    <p>Rarely used, but available if you need group files to have the final say.</p>
+  </div>
+</div>
+
+<div class="callout callout-why">
+  <strong>Why does this exist?</strong> Imagine you define <code>seed: 42</code> in your main config AND in a group config file. Which one should win? <code>_self_</code> tells Hydra the answer. Put it at the end = "my file's values are the final word."
+</div>
+
+<div class="callout callout-novasr">
+  NovaSR's <code>train.yaml</code> uses exactly this pattern:
+<pre><code>defaults:
+  - data: default        # loads data/default.yaml
+  - model: default       # loads model/default.yaml
+  - training: default    # loads training/default.yaml
+  - trainer: default     # loads trainer/default.yaml
+  - logging: default     # loads logging/default.yaml
+  - _self_               # train.yaml values override everything above</code></pre>
+</div>
+</div>
+
+<!-- ================= SECTION: COMPOSITION ================= -->
+<div class="section" id="composition">
+<h2>Composition — Putting It All Together</h2>
+
+<p>Now you understand the pieces. Let's see how they work together with a realistic example.</p>
+
+<h3>The scenario</h3>
+<p>You want to run experiments with different combinations. Instead of making a separate config for each combination, you compose them:</p>
+
+<div class="flow-diagram">
+  <span class="flow-step">train.yaml (defaults list)</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">Picks one from each group</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">Merges into one cfg object</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">Applies CLI overrides</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-step">Your code receives cfg</span>
+</div>
+
+<h3>Example: composing an experiment</h3>
+<pre><code><span class="hl-muted"># What Hydra does behind the scenes when you run:
+# python train.py model=resnet data=local optimizer.lr=0.01</span>
+
+<span class="hl-blue">Step 1:</span> Read train.yaml defaults list
+        → default says model=simple_cnn, data=cifar10, optimizer=adam
+
+<span class="hl-blue">Step 2:</span> CLI says model=resnet, data=local
+        → override: use model/resnet.yaml instead of model/simple_cnn.yaml
+        → override: use data/local.yaml instead of data/cifar10.yaml
+        → keep: optimizer/adam.yaml (no CLI override)
+
+<span class="hl-blue">Step 3:</span> Load those 3 YAML files + merge them
+
+<span class="hl-blue">Step 4:</span> Apply value overrides: optimizer.lr=0.01
+
+<span class="hl-blue">Step 5:</span> Hand the merged cfg to your function</code></pre>
+
+<h3>The math that makes this powerful</h3>
+<p>Without composition: 3 models × 2 datasets × 2 optimizers = <strong>12 config files</strong>.</p>
+<p>With composition: 3 + 2 + 2 = <strong>7 small files</strong>. And you can run any combination.</p>
+
+<div class="callout callout-key">
+  This is the key insight from the team conversation: <em>"Once you have everything set, you feel happy that this is the configuration, and then you can just run experiments by changing parts."</em> You set up your base once, then just swap pieces.
+</div>
+
+<h3>The "base experiment" pattern</h3>
+<p>One level up: you can also create experiment configs that <em>inherit from and override</em> a base config. This is what the conversation referred to as the "composable workflow":</p>
+
+<pre><code><span class="hl-muted"># configs/experiment/base.yaml — your baseline</span>
+defaults:
+  - /model: simple_cnn
+  - /data: cifar10
+  - /optimizer: adam
+  - _self_
+
+seed: 42
+experiment_name: base
+
+<span class="hl-muted"># configs/experiment/v1.yaml — tweak from base</span>
+defaults:
+  - base           <span class="hl-muted"># ← inherits everything from base.yaml</span>
+  - _self_         <span class="hl-muted"># ← my changes win</span>
+
+experiment_name: v1
+model:
+  channels: 64     <span class="hl-muted"># ← only override what's different</span>
+
+<span class="hl-muted"># configs/experiment/v2.yaml — another tweak</span>
+defaults:
+  - base
+  - _self_
+
+experiment_name: v2
+training:
+  learning_rate: 0.0001
+  num_epochs: 200</code></pre>
+
+<div class="callout callout-why">
+  <strong>Why this pattern?</strong> You never edit the base file. Want a new experiment? Copy 4 lines, change what's different. The base stays untouched = safe, reliable, reproducible. This is what the team conversation emphasized: "easy to the baselines... should be easy not to touch the base file."
+</div>
+</div>
+
+<!-- ================= SECTION: _TARGET_ ================= -->
+<div class="section" id="target-pattern">
+<h2>_target_ — Turning Config Into Python Objects</h2>
+
+<p>This is an advanced but extremely useful pattern. The idea: instead of just storing <em>values</em> in your config, you can store <em>which Python class to create</em>.</p>
+
+<h3>The problem it solves</h3>
+<pre><code><span class="hl-muted"># Without _target_ — you write this in Python:</span>
+if cfg.optimizer.name == "adam":
+    optimizer = torch.optim.Adam(params, lr=cfg.optimizer.lr)
+elif cfg.optimizer.name == "sgd":
+    optimizer = torch.optim.SGD(params, lr=cfg.optimizer.lr)
+elif cfg.optimizer.name == "adamw":
+    optimizer = torch.optim.AdamW(params, lr=cfg.optimizer.lr)
+<span class="hl-muted"># ... more if/elif for every optimizer you ever want to try</span></code></pre>
+
+<p>That's a lot of boilerplate. And every time you add a new optimizer, you edit code.</p>
+
+<h3>The solution: <code>_target_</code></h3>
+<pre><code><span class="hl-muted"># optimizer/adam.yaml</span>
+<span class="hl-purple">_target_</span>: torch.optim.Adam    <span class="hl-muted"># ← full Python import path</span>
+lr: 0.001
+weight_decay: 0.0001
+
+<span class="hl-muted"># optimizer/sgd.yaml</span>
+<span class="hl-purple">_target_</span>: torch.optim.SGD
+lr: 0.01
+momentum: 0.9</code></pre>
+
+<pre><code><span class="hl-muted"># In your Python code — ONE line, works for any optimizer:</span>
+from hydra.utils import instantiate
+
+optimizer = instantiate(cfg.optimizer, params=model.parameters())</code></pre>
+
+<div class="callout callout-why">
+  <strong>What just happened?</strong> Hydra reads <code>_target_: torch.optim.Adam</code> and knows: "import Adam from torch.optim, then call it with the other keys (lr, weight_decay) as arguments." It's like writing <code>Adam(lr=0.001, weight_decay=0.0001)</code> but the class name and arguments come from YAML.
+</div>
+
+<h3>How it maps to Python</h3>
+<pre><code><span class="hl-muted"># This YAML...</span>
+_target_: torch.optim.Adam
+lr: 0.001
+weight_decay: 0.0001
+
+<span class="hl-muted"># ...is equivalent to this Python:</span>
+from torch.optim import Adam
+Adam(lr=0.001, weight_decay=0.0001)
+
+<span class="hl-muted"># You can also pass extra args at call time:</span>
+instantiate(cfg.optimizer, params=model.parameters())
+<span class="hl-muted"># → Adam(lr=0.001, weight_decay=0.0001, params=model.parameters())</span></code></pre>
+
+<div class="callout callout-novasr">
+  NovaSR uses <code>_target_</code> for the PyTorch Lightning Trainer:
+<pre><code># trainer/default.yaml
+_target_: lightning.Trainer
+max_epochs: ${training.max_epochs}   # ← interpolation (next section!)
+accelerator: auto
+devices: 1
+precision: 32
+
+# trainer/ddp.yaml
+_target_: lightning.Trainer
+accelerator: auto
+devices: 8
+strategy:
+  _target_: lightning.pytorch.strategies.DDPStrategy  # ← nested _target_!
+  broadcast_buffers: false</code></pre>
+  <p>In the code, it doesn't use <code>instantiate()</code> directly — it converts to dict and constructs manually (because it needs to handle the nested strategy specially). But the <code>_target_</code> still documents <em>what class</em> the config is for.</p>
+</div>
+
+<h3>Manual instantiation (what NovaSR does)</h3>
+<pre><code><span class="hl-muted"># NovaSR's approach — convert to dict, pop _target_, pass as kwargs:</span>
+trainer_kwargs = OmegaConf.to_container(cfg.trainer, resolve=True)
+trainer_kwargs.pop("_target_", None)  <span class="hl-muted"># remove the class name, keep the args</span>
+
+<span class="hl-muted"># Handle nested _target_ for DDP strategy</span>
+if isinstance(trainer_kwargs.get("strategy"), dict):
+    strategy_cfg = trainer_kwargs["strategy"]
+    strategy_cfg.pop("_target_")
+    trainer_kwargs["strategy"] = DDPStrategy(**strategy_cfg)
+
+trainer = L.Trainer(**trainer_kwargs)  <span class="hl-muted"># pass everything as keyword args</span></code></pre>
+
+<div class="callout callout-key">
+  Both approaches work. <code>instantiate()</code> is cleaner but less flexible. Manual approach gives you full control. Use whichever fits your code. The important thing is: <code>_target_</code> in YAML clearly declares <em>what Python class</em> this config represents.
+</div>
+</div>
+
+<!-- ================= SECTION: INTERPOLATION ================= -->
+<div class="section" id="interpolation">
+<h2>Interpolation & Resolvers — Configs That Reference Each Other</h2>
+
+<p>Interpolation lets one config value reference another. It uses the <code>${...}</code> syntax.</p>
+
+<h3>Cross-config references</h3>
+<pre><code><span class="hl-muted"># training/default.yaml</span>
+max_epochs: 20
+log_every_n_steps: 50
+
+<span class="hl-muted"># trainer/default.yaml</span>
+_target_: lightning.Trainer
+max_epochs: <span class="hl-green">${training.max_epochs}</span>        <span class="hl-muted"># ← reads from training config!</span>
+log_every_n_steps: <span class="hl-green">${training.log_every_n_steps}</span></code></pre>
+
+<div class="callout callout-why">
+  <strong>Why reference instead of hardcode?</strong> If <code>max_epochs</code> is defined in two places, you'd have to update both when changing it. With <code>${training.max_epochs}</code>, you update ONE place and it propagates everywhere. Single source of truth.
+</div>
+
+<h3>Built-in resolvers</h3>
+<table class="compare-table">
+  <tr><th>Resolver</th><th>What it does</th><th>Example</th></tr>
+  <tr>
+    <td><code>${now:FORMAT}</code></td>
+    <td>Current timestamp</td>
+    <td><code>${now:%Y%m%d_%H%M%S}</code> → <code>20240127_143015</code></td>
+  </tr>
+  <tr>
+    <td><code>${hydra:runtime.cwd}</code></td>
+    <td>Where you ran the command from</td>
+    <td>The original working directory</td>
+  </tr>
+</table>
+
+<h3>Custom resolvers</h3>
+<p>You can register your own! NovaSR does this for auto-generating experiment names:</p>
+
+<pre><code><span class="hl-muted"># novasr/hydra_utils.py</span>
+from omegaconf import OmegaConf
+import coolname
+
+def register_resolvers():
+    if not OmegaConf.has_resolver("experiment_name"):
+        OmegaConf.register_new_resolver(
+            <span class="hl-green">"experiment_name"</span>,
+            lambda: "-".join(coolname.generate(2)),  <span class="hl-muted"># e.g., "brave-tiger"</span>
+        )
+
+<span class="hl-muted"># In train.yaml — use it:</span>
+hydra:
+  run:
+    dir: outputs/novasr/<span class="hl-green">${experiment_name:}</span>_${now:%Y%m%d_%H%M%S}</code></pre>
+
+<div class="callout callout-key">
+  This generates output dirs like <code>outputs/novasr/brave-tiger_20240127_143015/</code>. Every run gets a unique, memorable name. Much better than <code>run_001</code>, <code>run_002</code>...
+</div>
+
+<p><strong>Important:</strong> Custom resolvers must be registered <em>before</em> Hydra initializes. That's why NovaSR calls <code>register_resolvers()</code> at the top of <code>train.py</code>, before <code>@hydra.main</code> runs.</p>
+</div>
+
+<!-- ================= SECTION: OUTPUT DIRS ================= -->
+<div class="section" id="output-dirs">
+<h2>Output Directories — Auto-Saved Experiment Records</h2>
+
+<p>Every time you run a Hydra app, it creates an output directory with the exact config that was used.</p>
+
+<h3>Default structure</h3>
+<div class="file-tree"><span class="folder">outputs/</span>
+└── <span class="folder">novasr/</span>
+    └── <span class="folder">brave-tiger_20240127_143015/</span>  <span class="comment">← one run</span>
+        ├── <span class="folder">.hydra/</span>                      <span class="comment">← Hydra auto-saves here</span>
+        │   ├── <span class="file">config.yaml</span>              <span class="comment">← the final merged config</span>
+        │   ├── <span class="file">overrides.yaml</span>           <span class="comment">← what you typed on CLI</span>
+        │   └── <span class="file">hydra.yaml</span>               <span class="comment">← Hydra's own config</span>
+        ├── <span class="file">train.log</span>                    <span class="comment">← application logs</span>
+        └── <span class="folder">checkpoints/</span>                 <span class="comment">← your model checkpoints</span></div>
+
+<div class="callout callout-why">
+  <strong>Why this matters:</strong> Ever ran an experiment, got great results, and forgot what settings you used? Hydra saves the <em>exact</em> config (with all overrides applied) in <code>.hydra/config.yaml</code>. You can always go back and see what ran. <code>overrides.yaml</code> even tells you what you typed on the command line.
+</div>
+
+<h3>Customizing the output directory</h3>
+<pre><code><span class="hl-muted"># In your main config (train.yaml):</span>
+hydra:
+  run:
+    dir: outputs/novasr/${experiment_name:}_${now:%Y%m%d_%H%M%S}
+  job:
+    chdir: false   <span class="hl-muted"># don't change working directory (recommended)</span></code></pre>
+
+<table class="compare-table">
+  <tr><th>Setting</th><th>What it does</th></tr>
+  <tr>
+    <td><code>hydra.run.dir</code></td>
+    <td>Where to create the output folder for this run</td>
+  </tr>
+  <tr>
+    <td><code>hydra.job.chdir</code></td>
+    <td><code>false</code> = your Python code stays in the original directory (recommended). <code>true</code> = Hydra changes to the output dir before running your code.</td>
+  </tr>
+</table>
+
+<div class="callout callout-novasr">
+  NovaSR uses <code>chdir: false</code> so file paths in the code work relative to the project root, not the output dir. This is the recommended practice for most ML training scripts.
+</div>
+</div>
+
+<!-- ================= SECTION: NOVASR FULL BREAKDOWN ================= -->
+<div class="section" id="novasr-full">
+<h2>Full NovaSR Config Walkthrough</h2>
+
+<p>Let's walk through the <em>actual</em> NovaSR setup in your repo. This is a real-world example of everything we've covered.</p>
+
+<h3>The directory structure</h3>
+<div class="file-tree"><span class="folder">novasr/configs/</span>
+├── <span class="highlight">train.yaml</span>              <span class="comment">← main config (the "menu")</span>
+├── <span class="file">infer.yaml</span>              <span class="comment">← inference config</span>
+├── <span class="file">export.yaml</span>             <span class="comment">← model export config</span>
+│
+├── <span class="folder">data/</span>                    <span class="comment">← data group (3 options)</span>
+│   ├── <span class="file">default.yaml</span>        <span class="comment">← HuggingFace streaming dataset</span>
+│   ├── <span class="file">local.yaml</span>          <span class="comment">← local WAV files on disk</span>
+│   └── <span class="file">iv_audio_manual.yaml</span> <span class="comment">← large 203k-file dataset</span>
+│
+├── <span class="folder">model/</span>                   <span class="comment">← model group (2 options)</span>
+│   ├── <span class="file">default.yaml</span>        <span class="comment">← small/efficient (~340K params)</span>
+│   └── <span class="file">large.yaml</span>          <span class="comment">← bigger model</span>
+│
+├── <span class="folder">training/</span>                <span class="comment">← training hyperparams group (3 options)</span>
+│   ├── <span class="file">default.yaml</span>        <span class="comment">← Stage 1 basic</span>
+│   ├── <span class="file">stage1.yaml</span>         <span class="comment">← Stage 1 + perceptual loss</span>
+│   └── <span class="file">stage2_gan.yaml</span>     <span class="comment">← Stage 2 GAN fine-tuning</span>
+│
+├── <span class="folder">trainer/</span>                 <span class="comment">← Lightning Trainer group (3 options)</span>
+│   ├── <span class="file">default.yaml</span>        <span class="comment">← single GPU</span>
+│   ├── <span class="file">debug.yaml</span>          <span class="comment">← fast debug (10 train batches)</span>
+│   └── <span class="file">ddp.yaml</span>            <span class="comment">← multi-GPU DDP (8 GPUs)</span>
+│
+└── <span class="folder">logging/</span>                 <span class="comment">← logging group (2 options)</span>
+    ├── <span class="file">default.yaml</span>        <span class="comment">← full logging</span>
+    └── <span class="file">minimal.yaml</span>        <span class="comment">← DDP-safe minimal logging</span></div>
+
+<h3>The main config: train.yaml</h3>
+<pre><code><span class="hl-muted"># novasr/configs/train.yaml</span>
+<span class="hl-blue">defaults</span>:
+  - data: default           <span class="hl-muted"># → loads data/default.yaml</span>
+  - model: default          <span class="hl-muted"># → loads model/default.yaml</span>
+  - training: default       <span class="hl-muted"># → loads training/default.yaml</span>
+  - trainer: default        <span class="hl-muted"># → loads trainer/default.yaml</span>
+  - logging: default        <span class="hl-muted"># → loads logging/default.yaml</span>
+  - _self_                  <span class="hl-muted"># → values below override the groups</span>
+
+<span class="hl-muted"># Top-level settings</span>
+seed: 42
+checkpoint_path: null       <span class="hl-muted"># null = start from scratch</span>
+save_every: 5               <span class="hl-muted"># save checkpoint every 5 epochs</span>
+
+<span class="hl-muted"># Hydra settings</span>
+hydra:
+  run:
+    dir: outputs/novasr/${experiment_name:}_${now:%Y%m%d_%H%M%S}
+  job:
+    chdir: false</code></pre>
+
+<h3>A group config example: data/default.yaml vs data/local.yaml</h3>
+<div class="tabs">
+  <div class="tab-headers">
+    <div class="tab-header active" onclick="switchTab(this, 'data-default')">data/default.yaml</div>
+    <div class="tab-header" onclick="switchTab(this, 'data-local')">data/local.yaml</div>
+  </div>
+  <div class="tab-panel active" id="data-default">
+<pre><code><span class="hl-muted"># HuggingFace streaming — downloads on the fly</span>
+dataset_name: "some/hf-dataset"
+sample_amount: null         <span class="hl-muted"># use all data</span>
+batch_size: 8
+num_workers: 4
+min_duration_sec: 3.0</code></pre>
+    <p>This is the default — streams audio from HuggingFace. Good for getting started, but slower.</p>
+  </div>
+  <div class="tab-panel" id="data-local">
+<pre><code><span class="hl-muted"># Local files — pre-downloaded, much faster</span>
+audio_dir: /path/to/audio/files
+batch_size: 64              <span class="hl-muted"># can be bigger since local is faster</span>
+num_workers: 4
+min_duration_sec: 3.0
+validation_ratio: 0.1</code></pre>
+    <p>For serious training — data already on disk, bigger batches, faster iteration.</p>
+  </div>
+</div>
+
+<h3>How the training script uses the config</h3>
+<pre><code><span class="hl-muted"># novasr/scripts/train.py (simplified)</span>
+from novasr.hydra_utils import register_resolvers
+
+<span class="hl-green">register_resolvers()</span>  <span class="hl-muted"># ← must be before @hydra.main!</span>
+
+<span class="hl-purple">@hydra.main</span>(version_base=None, config_path="../configs", config_name="train")
+def main(cfg: DictConfig) -> None:
+    <span class="hl-muted"># By now, cfg has everything merged from all groups + CLI overrides</span>
+
+    L.seed_everything(cfg.seed)         <span class="hl-muted"># cfg.seed = 42</span>
+
+    <span class="hl-muted"># Decide which model to create based on training config</span>
+    use_gan = cfg.training.get("use_gan", False)
+    if use_gan:
+        model = NovaSRGANLightningModule(
+            model_config=cfg.model,       <span class="hl-muted"># passes the model sub-config</span>
+            training_config=cfg.training,  <span class="hl-muted"># passes the training sub-config</span>
+        )
+    else:
+        model = NovaSRLightningModule(
+            model_config=cfg.model,
+            training_config=cfg.training,
+        )
+
+    <span class="hl-muted"># Create data module from data config</span>
+    datamodule = NovaSRDataModule(cfg.data)
+
+    <span class="hl-muted"># Create trainer from trainer config</span>
+    trainer_kwargs = OmegaConf.to_container(cfg.trainer, resolve=True)
+    trainer_kwargs.pop("_target_", None)
+    trainer = L.Trainer(**trainer_kwargs)
+
+    <span class="hl-muted"># Train!</span>
+    trainer.fit(model, datamodule=datamodule)</code></pre>
+
+<div class="callout callout-key">
+  Notice how clean this is. The training script doesn't know or care whether you're using HuggingFace data or local files, or a small model or large model, or single GPU or 8 GPUs. It just reads from <code>cfg</code> and the right things happen. That's the power of composition.
+</div>
+</div>
+
+<!-- ================= SECTION: NOVASR USAGE ================= -->
+<div class="section" id="novasr-usage">
+<h2>Running NovaSR Experiments</h2>
+
+<p>Here are real commands you'd use with the NovaSR repo:</p>
+
+<h3>Common experiment patterns</h3>
+
+<div class="toggle open">
+  <div class="toggle-header" onclick="this.parentElement.classList.toggle('open')">
+    <span class="toggle-arrow">▶</span> Quick debug run (make sure nothing is broken)
+  </div>
+  <div class="toggle-body">
+<pre><code>uv run python -m novasr.scripts.train trainer=debug data.sample_amount=10</code></pre>
+    <p>What this does: Uses <code>trainer/debug.yaml</code> (limits to 10 train + 5 val batches), and only loads 10 audio samples. Runs in seconds, not hours.</p>
+  </div>
+</div>
+
+<div class="toggle">
+  <div class="toggle-header" onclick="this.parentElement.classList.toggle('open')">
+    <span class="toggle-arrow">▶</span> Default training (streaming from HuggingFace)
+  </div>
+  <div class="toggle-body">
+<pre><code>uv run python -m novasr.scripts.train</code></pre>
+    <p>Uses all defaults: HuggingFace data, small model, single GPU, full logging. Good for starting out.</p>
+  </div>
+</div>
+
+<div class="toggle">
+  <div class="toggle-header" onclick="this.parentElement.classList.toggle('open')">
+    <span class="toggle-arrow">▶</span> Multi-GPU training with local data
+  </div>
+  <div class="toggle-body">
+<pre><code>uv run python -m novasr.scripts.train data=local trainer=ddp logging=minimal</code></pre>
+    <p>Swaps three groups at once: local disk data (faster), 8-GPU DDP training, and minimal logging (avoids DDP hangs).</p>
+  </div>
+</div>
+
+<div class="toggle">
+  <div class="toggle-header" onclick="this.parentElement.classList.toggle('open')">
+    <span class="toggle-arrow">▶</span> Stage 2 GAN fine-tuning from checkpoint
+  </div>
+  <div class="toggle-body">
+<pre><code>uv run python -m novasr.scripts.train \
+  training=stage2_gan \
+  checkpoint_path=outputs/novasr/brave-tiger_20240127/checkpoints/last.ckpt \
+  data=local trainer=ddp logging=minimal</code></pre>
+    <p>Loads Stage 1 weights, switches to GAN training config, uses local data on 8 GPUs.</p>
+  </div>
+</div>
+
+<div class="toggle">
+  <div class="toggle-header" onclick="this.parentElement.classList.toggle('open')">
+    <span class="toggle-arrow">▶</span> Override specific hyperparameters
+  </div>
+  <div class="toggle-body">
+<pre><code>uv run python -m novasr.scripts.train \
+  data=local \
+  data.batch_size=16 \
+  training.learning_rate=1e-4 \
+  training.max_epochs=50</code></pre>
+    <p>Use local data but with smaller batch size, specific learning rate, and 50 epochs.</p>
+  </div>
+</div>
+
+<div class="callout callout-try">
+  <strong>Exercise:</strong> What command would you run for: "default model, local data, 4 GPUs instead of 8, learning rate 5e-5"?
+  <details>
+    <summary style="cursor:pointer; color:var(--accent); margin-top:8px;">Show answer</summary>
+    <pre><code>uv run python -m novasr.scripts.train \
+  data=local trainer=ddp trainer.devices=4 \
+  training.learning_rate=5e-5</code></pre>
+    <p>Notice: <code>trainer=ddp</code> gives you the DDP config (8 GPUs), then <code>trainer.devices=4</code> overrides just the device count.</p>
+  </details>
+</div>
+</div>
+
+<!-- ================= SECTION: WRITE YOUR OWN ================= -->
+<div class="section" id="write-your-own">
+<h2>Write Your Own Training Config (Template)</h2>
+
+<p>Now that you understand how NovaSR does it, here's how to set up Hydra for your <em>own</em> training runs.</p>
+
+<h3>Step 1: Create the folder structure</h3>
+<div class="file-tree"><span class="folder">my_project/</span>
+├── <span class="folder">configs/</span>
+│   ├── <span class="highlight">train.yaml</span>          <span class="comment">← main config</span>
+│   ├── <span class="folder">model/</span>
+│   │   └── <span class="file">default.yaml</span>
+│   ├── <span class="folder">data/</span>
+│   │   └── <span class="file">default.yaml</span>
+│   └── <span class="folder">training/</span>
+│       └── <span class="file">default.yaml</span>
+└── <span class="folder">scripts/</span>
+    └── <span class="file">train.py</span></div>
+
+<h3>Step 2: Write the configs</h3>
+<div class="tabs">
+  <div class="tab-headers">
+    <div class="tab-header active" onclick="switchTab(this, 'own-main')">train.yaml</div>
+    <div class="tab-header" onclick="switchTab(this, 'own-model')">model/default.yaml</div>
+    <div class="tab-header" onclick="switchTab(this, 'own-data')">data/default.yaml</div>
+    <div class="tab-header" onclick="switchTab(this, 'own-training')">training/default.yaml</div>
+  </div>
+  <div class="tab-panel active" id="own-main">
+<pre><code><span class="hl-muted"># configs/train.yaml</span>
+defaults:
+  - model: default
+  - data: default
+  - training: default
+  - _self_
+
+seed: 42
+checkpoint_path: null
+
+hydra:
+  run:
+    dir: outputs/${now:%Y%m%d_%H%M%S}
+  job:
+    chdir: false</code></pre>
+  </div>
+  <div class="tab-panel" id="own-model">
+<pre><code><span class="hl-muted"># configs/model/default.yaml</span>
+<span class="hl-muted"># Put your model's hyperparameters here</span>
+name: my_model
+hidden_size: 256
+num_layers: 4
+dropout: 0.1</code></pre>
+  </div>
+  <div class="tab-panel" id="own-data">
+<pre><code><span class="hl-muted"># configs/data/default.yaml</span>
+<span class="hl-muted"># Put your data loading settings here</span>
+dataset_path: /path/to/data
+batch_size: 32
+num_workers: 4
+train_split: 0.9</code></pre>
+  </div>
+  <div class="tab-panel" id="own-training">
+<pre><code><span class="hl-muted"># configs/training/default.yaml</span>
+<span class="hl-muted"># Training hyperparameters</span>
+learning_rate: 1e-4
+max_epochs: 100
+weight_decay: 0.01
+scheduler: cosine
+warmup_steps: 500</code></pre>
+  </div>
+</div>
+
+<h3>Step 3: Write the training script</h3>
+<pre><code><span class="hl-muted"># scripts/train.py</span>
+import hydra
+from omegaconf import DictConfig, OmegaConf
+
+@hydra.main(version_base=None, config_path="../configs", config_name="train")
+def main(cfg: DictConfig) -> None:
+    <span class="hl-muted"># Print the full resolved config (great for debugging)</span>
+    print(OmegaConf.to_yaml(cfg))
+
+    <span class="hl-muted"># Access config values</span>
+    print(f"Model: {cfg.model.name}")
+    print(f"LR: {cfg.training.learning_rate}")
+    print(f"Batch size: {cfg.data.batch_size}")
+
+    <span class="hl-muted"># Your training code here...</span>
+    <span class="hl-muted"># model = build_model(cfg.model)</span>
+    <span class="hl-muted"># dataset = load_data(cfg.data)</span>
+    <span class="hl-muted"># train(model, dataset, cfg.training)</span>
+
+if __name__ == "__main__":
+    main()</code></pre>
+
+<h3>Step 4: Add more options as needed</h3>
+<p>Want to try a bigger model? Add <code>model/large.yaml</code>. Want a different dataset? Add <code>data/imagenet.yaml</code>. The structure grows naturally.</p>
+
+<div class="callout callout-key">
+  <strong>The pattern:</strong> Start simple (just <code>default.yaml</code> in each group). Add new options only when you need them. Don't over-engineer from day one. NovaSR started with defaults and added <code>large.yaml</code>, <code>ddp.yaml</code>, <code>stage2_gan.yaml</code> as the project evolved.
+</div>
+</div>
+
+<!-- ================= SECTION: CHEATSHEET ================= -->
+<div class="section" id="cheatsheet">
+<h2>Cheat Sheet</h2>
+
+<h3>Config file patterns</h3>
+<table class="compare-table">
+  <tr><th>Pattern</th><th>Where</th><th>What it does</th></tr>
+  <tr><td><code>defaults:</code></td><td>Main YAML</td><td>Lists which group configs to load</td></tr>
+  <tr><td><code>- group: option</code></td><td>defaults list</td><td>Load <code>group/option.yaml</code></td></tr>
+  <tr><td><code>- _self_</code></td><td>defaults list</td><td>Controls override order (put at end = your file wins)</td></tr>
+  <tr><td><code>_target_: path.to.Class</code></td><td>Any YAML</td><td>Declares which Python class this config represents</td></tr>
+  <tr><td><code>${other.key}</code></td><td>Any YAML</td><td>References another config value</td></tr>
+  <tr><td><code>${now:%Y%m%d}</code></td><td>Any YAML</td><td>Current date/time</td></tr>
+  <tr><td><code>${custom_resolver:}</code></td><td>Any YAML</td><td>Calls a registered custom resolver</td></tr>
+</table>
+
+<h3>CLI patterns</h3>
+<table class="compare-table">
+  <tr><th>Command</th><th>What it does</th></tr>
+  <tr><td><code>key=value</code></td><td>Override an existing config value</td></tr>
+  <tr><td><code>group=option</code></td><td>Switch which file to use for a group</td></tr>
+  <tr><td><code>+key=value</code></td><td>Add a new key</td></tr>
+  <tr><td><code>++key=value</code></td><td>Override or add</td></tr>
+  <tr><td><code>~key</code></td><td>Remove a key</td></tr>
+  <tr><td><code>--config-name=NAME</code></td><td>Use a different main config file</td></tr>
+  <tr><td><code>-m key=a,b,c</code></td><td>Multirun: run once for each value</td></tr>
+</table>
+
+<h3>Python patterns</h3>
+<table class="compare-table">
+  <tr><th>Code</th><th>What it does</th></tr>
+  <tr><td><code>cfg.key.subkey</code></td><td>Access a value (dot notation)</td></tr>
+  <tr><td><code>cfg.get("key", default)</code></td><td>Safe access with fallback</td></tr>
+  <tr><td><code>OmegaConf.to_yaml(cfg)</code></td><td>Print config as readable YAML</td></tr>
+  <tr><td><code>OmegaConf.to_container(cfg, resolve=True)</code></td><td>Convert to plain Python dict</td></tr>
+  <tr><td><code>instantiate(cfg.obj)</code></td><td>Create Python object from <code>_target_</code> config</td></tr>
+  <tr><td><code>OmegaConf.register_new_resolver(name, fn)</code></td><td>Register custom resolver</td></tr>
+</table>
+</div>
+
+<!-- ================= SECTION: CHECKLIST ================= -->
+<div class="section" id="checklist">
+<h2>Learning Checklist</h2>
+<p>Track your progress. Click to mark what you've understood:</p>
+
+<div class="check-item"><div class="check-box" onclick="toggleCheck(this)"></div> I understand why Hydra exists (config mess → clean composition)</div>
+<div class="check-item"><div class="check-box" onclick="toggleCheck(this)"></div> I can write a flat YAML config and load it with <code>@hydra.main</code></div>
+<div class="check-item"><div class="check-box" onclick="toggleCheck(this)"></div> I know what <code>config_path</code> and <code>config_name</code> do in the decorator</div>
+<div class="check-item"><div class="check-box" onclick="toggleCheck(this)"></div> I can override config values from the CLI (<code>key=value</code>)</div>
+<div class="check-item"><div class="check-box" onclick="toggleCheck(this)"></div> I understand config groups (folders = groups, files = options)</div>
+<div class="check-item"><div class="check-box" onclick="toggleCheck(this)"></div> I know what the defaults list does and where to put <code>_self_</code></div>
+<div class="check-item"><div class="check-box" onclick="toggleCheck(this)"></div> I understand composition (pick one from each group → merge)</div>
+<div class="check-item"><div class="check-box" onclick="toggleCheck(this)"></div> I know what <code>_target_</code> is and how it maps to Python classes</div>
+<div class="check-item"><div class="check-box" onclick="toggleCheck(this)"></div> I understand interpolation (<code>${other.key}</code>) and why it's useful</div>
+<div class="check-item"><div class="check-box" onclick="toggleCheck(this)"></div> I can read NovaSR's config structure and understand each file's role</div>
+<div class="check-item"><div class="check-box" onclick="toggleCheck(this)"></div> I can set up Hydra configs for my own training runs</div>
+<div class="check-item"><div class="check-box" onclick="toggleCheck(this)"></div> I know how output directories and auto-saving work</div>
+
+<div style="margin-top:30px">
+
+<h3>Mini Quiz</h3>
+
+<div class="quiz" id="quiz1">
+  <h4>Q1: What does <code>model=large</code> on the CLI do?</h4>
+  <div class="quiz-option" onclick="checkQuiz(this, true, 'quiz1')">Loads <code>model/large.yaml</code> instead of the default model config</div>
+  <div class="quiz-option" onclick="checkQuiz(this, false, 'quiz1')">Sets <code>cfg.model</code> to the string <code>"large"</code></div>
+  <div class="quiz-option" onclick="checkQuiz(this, false, 'quiz1')">Creates a new model called "large"</div>
+  <div class="quiz-feedback" id="quiz1-feedback"></div>
+</div>
+
+<div class="quiz" id="quiz2">
+  <h4>Q2: What does <code>_self_</code> at the end of the defaults list mean?</h4>
+  <div class="quiz-option" onclick="checkQuiz(this, false, 'quiz2')">It imports the file itself recursively</div>
+  <div class="quiz-option" onclick="checkQuiz(this, true, 'quiz2')">Values in the current file override values from group configs</div>
+  <div class="quiz-option" onclick="checkQuiz(this, false, 'quiz2')">It's required but doesn't do anything</div>
+  <div class="quiz-feedback" id="quiz2-feedback"></div>
+</div>
+
+<div class="quiz" id="quiz3">
+  <h4>Q3: What's the difference between <code>model=large</code> and <code>model.channels=128</code>?</h4>
+  <div class="quiz-option" onclick="checkQuiz(this, false, 'quiz3')">They do the same thing</div>
+  <div class="quiz-option" onclick="checkQuiz(this, false, 'quiz3')">First one changes a value, second one switches files</div>
+  <div class="quiz-option" onclick="checkQuiz(this, true, 'quiz3')">First one switches which config file to load, second one changes a specific value</div>
+  <div class="quiz-feedback" id="quiz3-feedback"></div>
+</div>
+
+<div class="quiz" id="quiz4">
+  <h4>Q4: In NovaSR, why is <code>logging=minimal</code> used with DDP training?</h4>
+  <div class="quiz-option" onclick="checkQuiz(this, false, 'quiz4')">To save disk space</div>
+  <div class="quiz-option" onclick="checkQuiz(this, true, 'quiz4')">Because full logging causes DDP hangs (CUDA sync issues across GPUs)</div>
+  <div class="quiz-option" onclick="checkQuiz(this, false, 'quiz4')">Because DDP doesn't support logging</div>
+  <div class="quiz-feedback" id="quiz4-feedback"></div>
+</div>
+
+</div>
+</div>
+
+</div><!-- end main -->
+</div><!-- end layout -->
+
+<script>
+// Tab switching
+function switchTab(header, panelId) {
+  const tabs = header.closest('.tabs');
+  tabs.querySelectorAll('.tab-header').forEach(h => h.classList.remove('active'));
+  tabs.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  header.classList.add('active');
+  document.getElementById(panelId).classList.add('active');
+}
+
+// Progress tracking
+let completedSections = new Set();
+const totalSections = 10;
+
+function updateProgress() {
+  const checks = document.querySelectorAll('.check-box.checked').length;
+  const total = document.querySelectorAll('.check-box').length;
+  const pct = Math.round((checks / total) * 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-count').textContent = checks;
+}
+
+function toggleCheck(el) {
+  el.classList.toggle('checked');
+  updateProgress();
+  // Save to localStorage
+  const items = [...document.querySelectorAll('.check-box')].map(b => b.classList.contains('checked'));
+  localStorage.setItem('hydra-checklist', JSON.stringify(items));
+}
+
+// Restore checklist from localStorage
+(function() {
+  const saved = localStorage.getItem('hydra-checklist');
+  if (saved) {
+    const items = JSON.parse(saved);
+    document.querySelectorAll('.check-box').forEach((b, i) => {
+      if (items[i]) b.classList.add('checked');
+    });
+    updateProgress();
+  }
+})();
+
+// Quiz
+function checkQuiz(option, correct, quizId) {
+  const quiz = document.getElementById(quizId);
+  if (quiz.dataset.answered) return;
+  quiz.dataset.answered = 'true';
+
+  if (correct) {
+    option.classList.add('correct');
+    const fb = document.getElementById(quizId + '-feedback');
+    fb.style.display = 'block';
+    fb.style.background = '#3fb95020';
+    fb.style.color = '#3fb950';
+    fb.textContent = '✓ Correct!';
+  } else {
+    option.classList.add('wrong');
+    quiz.querySelectorAll('.quiz-option').forEach(o => {
+      if (!o.classList.contains('wrong')) {
+        // Find the correct one by trying all
+      }
+    });
+    const fb = document.getElementById(quizId + '-feedback');
+    fb.style.display = 'block';
+    fb.style.background = '#ff7b7220';
+    fb.style.color = '#ff7b72';
+    fb.textContent = '✗ Not quite. Try reading the section again!';
+  }
+}
+
+// Active nav link on scroll
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+      const link = document.querySelector(`.nav-link[href="#${entry.target.id}"]`);
+      if (link) link.classList.add('active');
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+
+document.querySelectorAll('.section').forEach(s => observer.observe(s));
+
+// Close sidebar on mobile when clicking a link
+document.querySelectorAll('.nav-link').forEach(link => {
+  link.addEventListener('click', () => {
+    if (window.innerWidth <= 900) {
+      document.querySelector('.sidebar').classList.remove('open');
+    }
+  });
+});
+</script>
+
+</body>
+</html>
