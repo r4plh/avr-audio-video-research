@@ -1,6 +1,6 @@
 # Understanding Audio Codecs: From MP3 to Neural Codecs like DAC
 
-Before diving into the DAC paper or any neural audio codec, it's worth spending some time understanding what codecs actually do, why they exist, and how to reason about them. This piece covers the fundamentals I found useful while exploring DAC.
+Before diving into the (descript-audio-codec) DAC paper or any neural audio codec, it's worth spending some time understanding what codecs actually do, why they exist, and how to reason about them. This piece covers the fundamentals I found useful while exploring DAC.
 
 ---
 
