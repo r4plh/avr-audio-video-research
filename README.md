@@ -1,10 +1,11 @@
 # VideoEra
 
+> This repo is actively maintained and keeps getting updated as I go deeper into audio-visual ML research.
 When I started working on speech enhancement at Invideo, I realised pretty quickly that you can't build good audio-visual models without going deep into the fundamentals - what sound actually is, how it gets digitised, what happens when you take an STFT, why aliasing destroys information, how codecs compress and reconstruct audio. The gap between "I've used librosa" and "I know what's happening under the hood" is massive, and that gap shows up when you're debugging model outputs, designing experiments, and reasoning about why something failed.
 
 This repo is where I document all of that - from first principles (sound physics, Fourier transforms, sampling theory) all the way up to paper breakdowns (HuBERT, Wav2Vec2, Whisper, SyncNet), spectral analysis notebooks, and standalone implementations. It basically traces the path from "what is a sound wave" to "how does a self-supervised model learn audio-visual synchronisation."
 
-I learn by going deep, writing things down, and building something with it. That's what this repo is.
+I learn by going deep, writing things down, and building something with it. That's what this repo is. It's not a finished thing - it keeps growing as I go deeper into audio-visual research, pick up new papers, and build new things at work. If you're seeing this, you're looking at a snapshot of where I am right now.
 
 ## What's Inside
 
