@@ -20,7 +20,7 @@ These two terms sound similar but measure completely different things.
 
 **Bitrate** is about data flow - how many bits of data per second. This tells you how much storage or bandwidth you need. The unit is bits per second (bps), typically expressed as kilobits per second (kbps).
 
-A quick note on units since this trips people up: lowercase 'b' means bits, uppercase 'B' means bytes. So `kb` is kilobits, `KB` is kilobytes, and `kbps` is kilobits per second. Since 8 bits = 1 byte, you divide by 8 to convert. And 1000 kilobytes = 1 megabyte. So to go from kilobits to megabytes: divide by 8000.
+A quick note on units since this trips people up: lowercase 'b' means bits, uppercase 'B' means bytes. So `kb` is kilobits, `KB` is kilobytes, and `kbps` is kilobits per second. Since 8 bits = 1 byte, you divide by 8 to convert. In the decimal (SI) standard, 1000 kilobytes = 1 megabyte. So to go from kilobits to megabytes: divide by 8000.
 
 ---
 
@@ -69,17 +69,17 @@ Here's where codecs earn their keep. Consider what happens when you press play o
 
 Without compression (raw WAV at 44.1kHz stereo):
 - File size: ~30 MB
-- On a typical mobile connection, that's a noticeable wait
+- At 1.4 Mbps, streaming this in real time requires a consistently strong connection with no margin for fluctuation
 - Spotify's monthly bandwidth bill would be catastrophic
 
 With compression (MP3 at 128 kbps):
 - File size: ~2.8 MB
-- Downloads almost instantly
+- Only ~16 KB needs to arrive per second to keep up with playback - streams smoothly even on weak connections
 - Bandwidth costs drop by 10x
 
 The flow looks like this: the artist uploads a WAV file, Spotify's servers encode it to MP3 (this happens once and gets stored), when you stream it only 2.8 MB travels over the internet, and your phone's built-in MP3 decoder reconstructs the audio in real-time.
 
-At Spotify's scale of 150+ billion streams per month, the difference between transmitting raw audio versus compressed audio is genuinely hundreds of millions of dollars in bandwidth costs.
+At Spotify's scale of hundreds of billions of streams per month, the difference between transmitting raw audio versus compressed audio is genuinely hundreds of millions of dollars in bandwidth costs.
 
 ---
 
@@ -96,6 +96,14 @@ For raw audio, you calculate it. For codecs, you look it up from the documentati
 Codecs fall into two categories based on how their bitrate is determined.
 
 **Configurable bitrate codecs** (traditional): MP3, AAC, OGG, FLAC. You choose the bitrate (128, 256, 320 kbps, etc.) and the encoder adjusts quality to fit that budget. Same algorithm, different target sizes. These have been around since the 90s.
+
+To make this concrete: MP3 processes audio in fixed frames of 1152 samples. At 44.1kHz that's ~26ms per frame, giving ~38 frames per second. When you target 128 kbps, each frame gets a bit budget:
+
+```
+128,000 bps ÷ 38 frames/sec ≈ 3,400 bits per frame
+```
+
+The psychoacoustic model then decides how to spend those 3,400 bits — assigning more to frequencies that matter perceptually and fewer (or zero) to frequencies you won't notice missing. At 320 kbps the budget is ~8,400 bits per frame and almost nothing gets discarded. At 64 kbps the budget is ~1,700 bits and the model has to be much more aggressive. The algorithm is the same; only the per-frame budget changes. The standard bitrate options (32, 64, 128, 192, 320 kbps etc.) are a fixed list defined in the MP3 spec, chosen empirically through listening tests — not derived from a formula.
 
 **Fixed bitrate codecs** (neural): DAC, EnCodec, SoundStream. The bitrate is determined by the architecture - number of codebooks, codebook size, temporal resolution. You can't change it without retraining the model. These are learned end-to-end on massive audio datasets.
 
