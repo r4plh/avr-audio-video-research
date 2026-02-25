@@ -1,4 +1,4 @@
-# VideoEra
+# AudioVideoEra
 
 > This repo is actively maintained and keeps getting updated as I go deeper into audio-visual ML research.
 When I started working on speech enhancement at Invideo, I realised pretty quickly that you can't build good audio-visual models without going deep into the fundamentals - what sound actually is, how it gets digitised, what happens when you take an STFT, why aliasing destroys information, how codecs compress and reconstruct audio. The gap between "I've used librosa" and "I know what's happening under the hood" is massive, and that gap shows up when you're debugging model outputs, designing experiments, and reasoning about why something failed.
